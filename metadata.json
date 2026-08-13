@@ -1,0 +1,6 @@
+{
+  "name": "Tap Review AI",
+  "description": "Enterprise AI Google Review Management SaaS Platform for Businesses and Agencies",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

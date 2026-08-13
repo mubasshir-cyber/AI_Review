@@ -1,0 +1,248 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #F8FAFC;
+    color: #0F172A;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  /* ====================================================
+     MODERN HANDCRAFTED SAAS DESIGN SYSTEM UTILITIES
+     Inspired by Linear, Vercel, Stripe, Raycast & Clerk
+     ==================================================== */
+
+  /* Modern Card / Surface */
+  .clay-card {
+    background-color: #FFFFFF;
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    border-radius: 1rem; /* 16px */
+    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.03), 0 1px 2px -1px rgba(15, 23, 42, 0.03);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .clay-card-hover {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+  }
+
+  .clay-card-hover:hover {
+    border-color: rgba(203, 213, 225, 0.9);
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.03);
+    transform: translateY(-2px);
+  }
+
+  /* Inset / Subdued Surface */
+  .clay-surface-secondary {
+    background-color: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.875rem;
+  }
+
+  /* Sleek Primary Button */
+  .clay-btn-primary {
+    background-color: #2563EB;
+    color: #FFFFFF;
+    border: 1px solid #1D4ED8;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    box-shadow: 0 1px 2px 0 rgba(37, 99, 235, 0.2);
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .clay-btn-primary:hover {
+    background-color: #1D4ED8;
+    border-color: #1E40AF;
+    box-shadow: 0 4px 12px 0 rgba(37, 99, 235, 0.25);
+    transform: translateY(-1px);
+  }
+
+  .clay-btn-primary:active {
+    transform: translateY(0.5px) scale(0.98);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Secondary / Ghost Surface Button */
+  .clay-btn-secondary {
+    background-color: #FFFFFF;
+    color: #0F172A;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .clay-btn-secondary:hover {
+    background-color: #F8FAFC;
+    border-color: #CBD5E1;
+    color: #0284C7;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px 0 rgba(0, 0, 0, 0.04);
+  }
+
+  .clay-btn-secondary:active {
+    transform: translateY(0.5px) scale(0.98);
+  }
+
+  /* Danger Button */
+  .clay-btn-danger {
+    background-color: #EF4444;
+    color: #FFFFFF;
+    border: 1px solid #DC2626;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    box-shadow: 0 1px 2px 0 rgba(239, 68, 68, 0.2);
+    transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .clay-btn-danger:hover {
+    background-color: #DC2626;
+    transform: translateY(-1px);
+  }
+
+  /* Clean Input */
+  .clay-input {
+    background-color: #FFFFFF;
+    color: #0F172A;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+    transition: all 0.15s ease-in-out;
+  }
+
+  .clay-input:focus {
+    outline: none;
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  /* Refined SaaS Table */
+  .clay-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.875rem;
+    overflow: hidden;
+    background-color: #FFFFFF;
+  }
+
+  .clay-table th {
+    background-color: #F8FAFC;
+    color: #475569;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #E2E8F0;
+  }
+
+  .clay-table td {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid #F1F5F9;
+    background-color: #FFFFFF;
+    color: #0F172A;
+    font-size: 0.8125rem;
+  }
+
+  .clay-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .clay-table tr:hover td {
+    background-color: #F8FAFC;
+  }
+
+  /* Badges */
+  .clay-badge-primary {
+    background-color: #EFF6FF;
+    color: #1D4ED8;
+    border: 1px solid #BFDBFE;
+    border-radius: 9999px;
+    font-weight: 600;
+  }
+
+  .clay-badge-accent {
+    background-color: #F1F5F9;
+    color: #334155;
+    border: 1px solid #E2E8F0;
+    border-radius: 9999px;
+    font-weight: 600;
+  }
+
+  .clay-badge-success {
+    background-color: #F0FDF4;
+    color: #15803D;
+    border: 1px solid #BBF7D0;
+    border-radius: 9999px;
+    font-weight: 600;
+  }
+
+  .clay-badge-warning {
+    background-color: #FFFBEB;
+    color: #B45309;
+    border: 1px solid #FDE68A;
+    border-radius: 9999px;
+    font-weight: 600;
+  }
+
+  .clay-badge-danger {
+    background-color: #FEF2F2;
+    color: #B91C1C;
+    border: 1px solid #FECACA;
+    border-radius: 9999px;
+    font-weight: 600;
+  }
+
+  /* Aliases for legacy compatibility */
+  .skeuo-card, .skeuo-container-sharp, .skeuo-container-dark-sharp {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px 0 rgba(0,0,0,0.03);
+  }
+
+  .skeuo-inset {
+    background-color: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.75rem;
+  }
+
+  .skeuo-btn-red, .skeuo-btn-black {
+    background-color: #0F172A;
+    color: #FFFFFF;
+    border: 1px solid #0F172A;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    transition: all 0.15s ease;
+  }
+
+  .skeuo-btn-red:hover, .skeuo-btn-black:hover {
+    background-color: #1E293B;
+  }
+
+  .skeuo-btn-white {
+    background-color: #FFFFFF;
+    color: #0F172A;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    transition: all 0.15s ease;
+  }
+
+  .skeuo-input {
+    background-color: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.75rem;
+  }
+}
+

@@ -1,0 +1,177 @@
+name: Deploy TapReview AI
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+concurrency:
+  group: tapreview-ai-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # ========================================
+      # 1. Checkout repository
+      # ========================================
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+
+      # ========================================
+      # 2. Setup Node.js
+      # ========================================
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+
+      # ========================================
+      # 3. Install dependencies
+      # ========================================
+
+      - name: Install dependencies
+        run: npm ci
+
+
+      # ========================================
+      # 4. TypeScript validation
+      # ========================================
+
+      - name: TypeScript check
+        run: npm run lint
+
+
+      # ========================================
+      # 5. Build application
+      # ========================================
+
+      - name: Build application
+        run: npm run build
+
+
+      # ========================================
+      # 6. Configure SSH
+      # ========================================
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          set -e
+
+          echo "Configuring SSH..."
+
+          mkdir -p ~/.ssh
+
+          printf '%s\n' "$SSH_PRIVATE_KEY" \
+            > ~/.ssh/tapreview_ai_deploy
+
+          chmod 600 ~/.ssh/tapreview_ai_deploy
+
+          printf '%s\n' "$KNOWN_HOSTS" \
+            > ~/.ssh/known_hosts
+
+          chmod 644 ~/.ssh/known_hosts
+
+          echo "SSH configuration completed."
+
+
+      # ========================================
+      # 7. Test SSH connection
+      # ========================================
+
+      - name: Test SSH connection
+        run: |
+          echo "Testing SSH connection..."
+
+          ssh \
+            -i ~/.ssh/tapreview_ai_deploy \
+            -p "${{ secrets.VPS_PORT }}" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=15 \
+            "${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}" \
+            "echo 'SSH connection successful'"
+
+
+      # ========================================
+      # 8. Deploy to VPS
+      # ========================================
+
+      - name: Deploy to VPS
+        run: |
+          ssh \
+            -i ~/.ssh/tapreview_ai_deploy \
+            -p "${{ secrets.VPS_PORT }}" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=15 \
+            "${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}" << 'EOF'
+
+            set -Eeuo pipefail
+
+            echo "======================================"
+            echo "Starting TapReview AI deployment"
+            echo "======================================"
+
+            cd "${{ secrets.VPS_APP_PATH }}"
+
+            echo "--------------------------------------"
+            echo "Fetching latest code"
+            echo "--------------------------------------"
+
+            git fetch origin main
+
+            echo "Resetting production to origin/main..."
+
+            git reset --hard origin/main
+
+            echo "Git status:"
+            git status
+
+            echo "--------------------------------------"
+            echo "Installing dependencies"
+            echo "--------------------------------------"
+
+            npm ci
+
+            echo "--------------------------------------"
+            echo "Running database migrations"
+            echo "--------------------------------------"
+
+            npm run migration:run
+
+            echo "--------------------------------------"
+            echo "Building application"
+            echo "--------------------------------------"
+
+            npm run build
+
+            echo "--------------------------------------"
+            echo "Restarting PM2"
+            echo "--------------------------------------"
+
+            pm2 restart tapreview-ai --update-env
+
+            echo "--------------------------------------"
+            echo "Checking PM2 status"
+            echo "--------------------------------------"
+
+            pm2 status
+
+            echo "======================================"
+            echo "Deployment completed successfully!"
+            echo "======================================"
+
+          EOF
