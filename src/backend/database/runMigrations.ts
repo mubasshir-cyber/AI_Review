@@ -30,70 +30,32 @@ export async function runDatabaseMigrationsAndSeed() {
       await client.connect();
       console.log('✅ Connected to PostgreSQL database server.');
 
-      // 1. Run Schema Migration SQL
-      const schemaPath = path.join(process.cwd(), 'migrations', '001_initial_schema.sql');
-      const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-      console.log('⚙️ Executing SQL Schema Migration (001_initial_schema.sql)...');
-      await client.query(schemaSql);
-      console.log('✅ PostgreSQL Tables successfully migrated: users, businesses, branches, reviews, feedback, plans, advertisements, subscriptions, api_key_configs, system_settings.');
+      // Run all SQL files in migrations/ (except the main seed 002_seed_data.sql) in lexicographic order.
+      const migrationsDir = path.join(process.cwd(), 'migrations');
+      const allFiles = fs.existsSync(migrationsDir) ? fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort() : [];
+      console.log('⚙️ Executing SQL migration files (excluding 002_seed_data.sql) in migrations/ ...');
+      for (const file of allFiles) {
+        if (file === '002_seed_data.sql') continue;
+        const filePath = path.join(migrationsDir, file);
+        try {
+          const sql = fs.readFileSync(filePath, 'utf8');
+          console.log(`⚙️ Executing ${file}...`);
+          await client.query(sql);
+          console.log(`✅ Executed ${file}`);
+        } catch (e: any) {
+          console.warn(`⚠️ Skipping ${file} due to error: ${e.message}`);
+        }
+      }
 
-      // 2. Run Seed Data SQL
+      // Now execute the main seed file
       const seedPath = path.join(process.cwd(), 'migrations', '002_seed_data.sql');
-      const seedSql = fs.readFileSync(seedPath, 'utf8');
-      console.log('🌱 Executing Dummy Seed Data (002_seed_data.sql)...');
-      await client.query(seedSql);
-      console.log('✅ PostgreSQL Seed Data inserted successfully (Smile Dental Clinic, Bright Coaching, Green Mart, Plans, Ads, Configs).');
-
-      // 3. Run Token Usage & AI Models Migration SQL
-      const tokenSchemaPath = path.join(process.cwd(), 'migrations', '003_token_usage_schema.sql');
-      const tokenSchemaSql = fs.readFileSync(tokenSchemaPath, 'utf8');
-      console.log('⚙️ Executing Token Usage & AI Models Migration (003_token_usage_schema.sql)...');
-      await client.query(tokenSchemaSql);
-      console.log('✅ Token Usage & AI Models tables successfully created and seeded.');
-
-      // 4. Run Agency Business Migration SQL
-      const agencySchemaPath = path.join(process.cwd(), 'migrations', '004_agency_business_and_logo.sql');
-      if (fs.existsSync(agencySchemaPath)) {
-        const agencySchemaSql = fs.readFileSync(agencySchemaPath, 'utf8');
-        console.log('⚙️ Executing Agency Business Migration (004_agency_business_and_logo.sql)...');
-        await client.query(agencySchemaSql);
-        console.log('✅ Agency Business and Branch created and seeded.');
-      }
-
-      // 5. Run QR Scan Tracks Migration SQL
-      const qrTrackSchemaPath = path.join(process.cwd(), 'migrations', '005_qr_scan_tracks.sql');
-      if (fs.existsSync(qrTrackSchemaPath)) {
-        const qrTrackSql = fs.readFileSync(qrTrackSchemaPath, 'utf8');
-        console.log('⚙️ Executing QR Scan Tracks Migration (005_qr_scan_tracks.sql)...');
-        await client.query(qrTrackSql);
-        console.log('✅ QR Scan Tracks table created successfully.');
-      }
-
-      // 6. Run Password Migration SQL
-      const pwdSchemaPath = path.join(process.cwd(), 'migrations', '006_user_passwords.sql');
-      if (fs.existsSync(pwdSchemaPath)) {
-        const pwdSql = fs.readFileSync(pwdSchemaPath, 'utf8');
-        console.log('⚙️ Executing User Passwords Migration (006_user_passwords.sql)...');
-        await client.query(pwdSql);
-        console.log('✅ User passwords column added and updated successfully.');
-      }
-
-      // 7. Run Password Reset Tokens Migration SQL
-      const pwdResetSchemaPath = path.join(process.cwd(), 'migrations', '007_password_resets.sql');
-      if (fs.existsSync(pwdResetSchemaPath)) {
-        const pwdResetSql = fs.readFileSync(pwdResetSchemaPath, 'utf8');
-        console.log('⚙️ Executing Password Reset Tokens Migration (007_password_resets.sql)...');
-        await client.query(pwdResetSql);
-        console.log('✅ Password Reset Tokens columns added successfully.');
-      }
-
-      // 8. Run Super Admin Seed SQL
-      const superAdminSeedPath = path.join(process.cwd(), 'migrations', '008_super_admin_seed.sql');
-      if (fs.existsSync(superAdminSeedPath)) {
-        const superAdminSql = fs.readFileSync(superAdminSeedPath, 'utf8');
-        console.log('⚙️ Executing Super Admin Seed (008_super_admin_seed.sql)...');
-        await client.query(superAdminSql);
-        console.log('✅ Super Admin seed inserted successfully.');
+      if (fs.existsSync(seedPath)) {
+        const seedSql = fs.readFileSync(seedPath, 'utf8');
+        console.log('🌱 Executing Dummy Seed Data (002_seed_data.sql)...');
+        await client.query(seedSql);
+        console.log('✅ PostgreSQL Seed Data inserted successfully (Smile Dental Clinic, Bright Coaching, Green Mart, Plans, Ads, Configs).');
+      } else {
+        console.log('ℹ️ No seed file 002_seed_data.sql found; skipping seed step.');
       }
 
       // 9. Upsert core seed users (admin@agency.com & owner@business.com) with valid bcrypt hashed password

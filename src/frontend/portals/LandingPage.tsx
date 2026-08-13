@@ -68,7 +68,7 @@ export const LandingPage: React.FC = () => {
   return (
     <div className="bg-slate-50 min-h-screen text-slate-900 font-sans selection:bg-blue-600 selection:text-white">
       {/* HERO SECTION */}
-      <section className="relative pt-12 pb-20 lg:pt-20 lg:pb-28 overflow-hidden">
+      <section className="relative pt-8 pb-12 lg:pt-12 lg:pb-16 overflow-hidden">
         {/* Subtle Ambient Light Glow Background */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-blue-500/10 via-indigo-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
 
@@ -224,8 +224,8 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* HOW IT WORKS (AS YC BENTO GRID) */}
-      <section className="py-16 sm:py-24 max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="text-center max-w-2xl mx-auto space-y-3 mb-14">
+      <section className="py-12 sm:py-16 max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="text-center max-w-2xl mx-auto space-y-3 mb-8">
           <span className="text-xs font-semibold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200/80">
             Automated Workflow
           </span>

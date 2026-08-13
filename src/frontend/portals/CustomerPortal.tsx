@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Business, Branch } from '../../types';
-import { Star, Sparkles, Check, Copy, ExternalLink, ThumbsUp, MessageSquare, Send, HeartHandshake, ShieldCheck, Building2, ChevronDown, Loader2, AlertCircle } from 'lucide-react';
+import { Star, Sparkles, Check, Copy, ExternalLink, ThumbsUp, MessageSquare, Send, HeartHandshake, ShieldCheck, Building2, ChevronDown, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export const CustomerPortal: React.FC = () => {
@@ -120,7 +120,12 @@ export const CustomerPortal: React.FC = () => {
 
   const handleRatingSelect = (selectedStar: number) => {
     setRating(selectedStar);
-    setStep('TAGS');
+    // Direct low ratings to the feedback form immediately; higher ratings proceed to tag selection
+    if (selectedStar < 4) {
+      setStep('FEEDBACK');
+    } else {
+      setStep('TAGS');
+    }
   };
 
   const toggleTag = (tag: string) => {
@@ -278,7 +283,7 @@ export const CustomerPortal: React.FC = () => {
   };
 
   return (
-    <div className="min-h-[85vh] bg-[#F5F7FB] flex flex-col items-center justify-center p-4 sm:p-6 font-sans">
+    <div className="bg-[#F5F7FB] flex flex-col items-center p-4 sm:p-6 font-sans">
       
       {/* Customer Demo Switcher Banner */}
       <div className="w-full max-w-lg mb-4 clay-card bg-white p-3 border border-[#DCE3EC] flex items-center justify-between gap-3 text-xs">
@@ -625,6 +630,15 @@ export const CustomerPortal: React.FC = () => {
                     <span>Submit Private Feedback</span>
                   </>
                 )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { window.location.href = '/'; }}
+                className="w-full mt-3 py-3 px-4 border border-[#E6EEF7] rounded-xl text-[#2563EB] font-extrabold text-xs flex items-center justify-center shadow-[0_6px_20px_rgba(37,99,235,0.06)] hover:bg-[#F7FBFF] transition-colors"
+              >
+                <span className="mr-2">←</span>
+                <span>Back to Home</span>
               </button>
             </form>
           )}

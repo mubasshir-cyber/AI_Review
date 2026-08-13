@@ -545,7 +545,7 @@ export const AgencyPortal: React.FC = () => {
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-3 flex-nowrap">
                 <button
                   type="button"
                   onClick={() => {
@@ -559,7 +559,7 @@ export const AgencyPortal: React.FC = () => {
                     setBranchServiceTags('');
                     setIsBranchModalOpen(true);
                   }}
-                  className="px-3.5 py-2 clay-btn-primary text-xs flex items-center space-x-1.5 cursor-pointer"
+                  className="px-4 py-2 bg-[#2563EB] text-white rounded-xl shadow-sm hover:bg-[#1f4fc4] flex items-center space-x-2 text-sm font-semibold"
                 >
                   <Plus className="w-4 h-4 text-white" />
                   <span>Add Branch Location</span>
@@ -580,14 +580,14 @@ export const AgencyPortal: React.FC = () => {
                     setMonthlyTokens(selectedBusiness.monthlyTokenLimit);
                     setIsBizModalOpen(true);
                   }}
-                  className="px-3.5 py-2 clay-btn-secondary text-xs flex items-center space-x-1.5 cursor-pointer"
+                  className="px-4 py-2 bg-white border border-[#DCE3EC] rounded-xl text-[#1E293B] hover:bg-[#F7F9FC] flex items-center space-x-2 text-sm font-semibold"
                 >
                   <Edit className="w-3.5 h-3.5 text-[#1E293B]" />
                   <span>Edit Business</span>
                 </button>
                 <button
                   onClick={() => handleDeleteBusiness(selectedBusiness.id)}
-                  className="px-3.5 py-2 bg-[#EF4444]/10 text-[#EF4444] hover:bg-[#EF4444] hover:text-white border border-[#EF4444]/30 rounded-xl font-bold text-xs transition-colors flex items-center space-x-1.5 cursor-pointer"
+                  className="px-4 py-2 bg-white border border-[#FEE2E2] text-[#EF4444] hover:bg-[#EF4444] hover:text-white rounded-xl flex items-center space-x-2 text-sm font-semibold shadow-sm transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Delete Business</span>
@@ -1007,15 +1007,21 @@ export const AgencyPortal: React.FC = () => {
                               <ChevronRight className="w-3.5 h-3.5 text-[#64748B] group-hover:text-[#2563EB]" />
                             </td>
                             <td className="text-[#64748B]">{b.ownerName} ({b.ownerEmail})</td>
-                            <td><span className="px-2 py-0.5 bg-[#EEF2F7] text-[#1E293B] font-bold text-[10px] rounded-md border border-[#DCE3EC]">{b.planName}</span></td>
+                            <td>
+                              <span className="inline-block max-w-[10rem] px-2 py-0.5 bg-[#EEF2F7] text-[#1E293B] font-bold text-[10px] rounded-md border border-[#DCE3EC] truncate">{b.planName}</span>
+                            </td>
                             <td className="font-bold text-[#1E293B]">{b.branchLimit} Locations</td>
                             <td className="font-mono text-[#2563EB] font-bold">{b.tokensUsedThisMonth.toLocaleString()} / {b.monthlyTokenLimit.toLocaleString()}</td>
                             <td><span className="px-2 py-0.5 bg-[#22C55E]/10 text-[#22C55E] rounded-full text-[10px] font-bold">{b.status}</span></td>
                             <td className="text-right">
-                              <span className="text-xs font-extrabold text-[#2563EB] group-hover:underline inline-flex items-center space-x-1">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); loadBusinessDetails(b); }}
+                                className="inline-flex items-center space-x-2 px-3 py-1 rounded-lg bg-white border border-transparent hover:border-[#E6EEF7] text-[#2563EB] font-semibold text-xs shadow-[0_6px_18px_rgba(37,99,235,0.06)] transition-colors"
+                                aria-label={`Inspect hierarchy for ${b.name}`}
+                              >
                                 <span>Inspect Hierarchy</span>
-                                <ChevronRight className="w-3.5 h-3.5" />
-                              </span>
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
                             </td>
                           </tr>
                         ))
@@ -1112,7 +1118,7 @@ export const AgencyPortal: React.FC = () => {
                     <div
                       key={b.id}
                       onClick={() => loadBusinessDetails(b)}
-                      className="bg-[#EEF2F7] p-5 rounded-2xl border border-[#DCE3EC] space-y-4 cursor-pointer transition-all group shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]"
+                      className="bg-[#EEF2F7] p-5 rounded-2xl border border-[#DCE3EC] space-y-4 cursor-pointer transition-transform transform hover:-translate-y-1 hover:shadow-lg group"
                     >
                       <div className="flex items-start justify-between">
                         <div>
@@ -1133,62 +1139,71 @@ export const AgencyPortal: React.FC = () => {
                         <p><strong className="text-[#1E293B]">Token Quota:</strong> {b.monthlyTokenLimit.toLocaleString()} / mo</p>
                       </div>
 
-                      <div className="pt-2 border-t border-[#DCE3EC] flex items-center justify-between gap-2">
-                        <span className="text-xs font-extrabold text-[#2563EB] group-hover:underline flex items-center space-x-1">
-                          <Building2 className="w-3.5 h-3.5" />
-                          <span>View Branches →</span>
-                        </span>
-
-                        <div className="flex items-center space-x-1.5">
+                      <div className="pt-2 border-t border-[#DCE3EC]">
+                        <div>
                           <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              const newStatus = b.status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED';
-                              try {
-                                const res = await fetchWithAuth(`/api/businesses/${b.id}`, {
-                                  method: 'PUT',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ status: newStatus }),
-                                });
-                                if (res.ok) {
-                                  showToast(`Business ${newStatus === 'SUSPENDED' ? 'suspended' : 'activated'} successfully!`);
-                                  loadAgencyData();
-                                }
-                              } catch (err) {
-                                showToast('Error updating status', 'error');
-                              }
-                            }}
-                            className={`px-2 py-1 text-[11px] font-bold rounded-lg cursor-pointer transition-colors ${
-                              b.status === 'SUSPENDED'
-                                ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                                : 'bg-rose-100 text-rose-800 hover:bg-rose-200'
-                            }`}
+                            onClick={(e) => { e.stopPropagation(); loadBusinessDetails(b); }}
+                            className="inline-flex items-center flex-nowrap whitespace-nowrap space-x-3 px-4 py-2 bg-white border border-[#DCE3EC] rounded-lg text-[#2563EB] font-semibold text-sm shadow-sm hover:bg-[#F7FBFF]"
+                            aria-label={`View branches for ${b.name}`}
                           >
-                            {b.status === 'SUSPENDED' ? 'Activate' : 'Suspend'}
+                            <Building2 className="w-5 h-5 text-[#2563EB]" />
+                            <span>View Branches</span>
+                            <ChevronRight className="w-4 h-4 text-[#64748B]" />
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingBiz(b);
-                              setBizName(b.name);
-                              setBizCategory(b.category || '');
-                              setOwnerName(b.ownerName);
-                              setOwnerEmail(b.ownerEmail);
-                              setOwnerPassword('');
-                              setConfirmPassword('');
-                              setPlanId(b.planId);
-                              setBranchLimit(b.branchLimit);
-                              setMonthlyTokens(b.monthlyTokenLimit);
-                              setIsBizModalOpen(true);
-                            }}
-                            className="px-2.5 py-1 clay-btn-secondary text-xs cursor-pointer flex items-center space-x-1"
-                          >
-                            <Edit className="w-3 h-3 text-[#1E293B]" />
-                            <span>Edit</span>
-                          </button>
+                          <div className="mt-3 w-full max-w-xs">
+                            <div className="flex flex-col gap-2">
+                              <button
+                                type="button"
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  const newStatus = b.status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED';
+                                  try {
+                                    const res = await fetchWithAuth(`/api/businesses/${b.id}`, {
+                                      method: 'PUT',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ status: newStatus }),
+                                    });
+                                    if (res.ok) {
+                                      showToast(`Business ${newStatus === 'SUSPENDED' ? 'suspended' : 'activated'} successfully!`);
+                                      loadAgencyData();
+                                    }
+                                  } catch (err) {
+                                    showToast('Error updating status', 'error');
+                                  }
+                                }}
+                                className={`w-full h-9 px-3 flex items-center justify-center text-sm font-semibold rounded-md cursor-pointer transition-colors ${
+                                  b.status === 'SUSPENDED'
+                                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                                    : 'bg-rose-100 text-rose-800 hover:bg-rose-200'
+                                }`}
+                              >
+                                {b.status === 'SUSPENDED' ? 'Activate' : 'Suspend'}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingBiz(b);
+                                  setBizName(b.name);
+                                  setBizCategory(b.category || '');
+                                  setOwnerName(b.ownerName);
+                                  setOwnerEmail(b.ownerEmail);
+                                  setOwnerPassword('');
+                                  setConfirmPassword('');
+                                  setPlanId(b.planId);
+                                  setBranchLimit(b.branchLimit);
+                                  setMonthlyTokens(b.monthlyTokenLimit);
+                                  setIsBizModalOpen(true);
+                                }}
+                                className="w-full h-9 px-3 flex items-center justify-center bg-white border border-[#DCE3EC] rounded-md text-[#1E293B] hover:bg-[#F7F9FC] text-sm cursor-pointer space-x-2"
+                              >
+                                <Edit className="w-4 h-4 text-[#1E293B]" />
+                                <span>Edit</span>
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

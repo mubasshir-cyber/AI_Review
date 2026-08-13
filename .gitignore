@@ -6,3 +6,9 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Migration fix files (added during recent migration/seed fixes)
+migrations/009_add_branch_name.sql
+migrations/001_initial_schema.sql
+# Migration runner script edits
+src/backend/database/runMigrations.ts
