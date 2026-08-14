@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Business, Branch, Review, Feedback, Plan, Advertisement, ApiKeyConfig, SystemSettings } from '../../types';
@@ -10,14 +11,46 @@ import { DemoManagementTab } from '../components/DemoManagementTab';
 import {
   ShieldCheck, Building2, CreditCard, Sparkles, Megaphone, Key, Sliders,
   Plus, Edit, Trash2, Search, CheckCircle2, DollarSign, Activity, Settings, RefreshCw,
-  ArrowLeft, MapPin, Phone, ExternalLink, QrCode, Star, MessageSquare, Tag, Users, ChevronRight, Play, Loader2
+  ArrowLeft, MapPin, Phone, ExternalLink, QrCode, Star, MessageSquare, Tag, Users, ChevronRight, Play, Loader2, Menu, X
 } from 'lucide-react';
 import { CategorySearchDropdown } from '../components/CategorySearchDropdown';
+import { useLenisSmoothScroll } from '../hooks/useLenisSmoothScroll';
 
 export const AgencyPortal: React.FC = () => {
   const { fetchWithAuth } = useAuth();
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'BUSINESSES' | 'PLANS' | 'ADS' | 'AI_ENGINE' | 'SETTINGS' | 'AGENCY_PROFILE' | 'DEMO'>('DASHBOARD');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const tabToPath: Record<string, string> = {
+    DASHBOARD: 'dashboard',
+    BUSINESSES: 'businesses',
+    PLANS: 'plans',
+    ADS: 'ads',
+    AI_ENGINE: 'ai-engine',
+    SETTINGS: 'settings',
+    AGENCY_PROFILE: 'profile',
+    DEMO: 'demo',
+  };
+
+  useEffect(() => {
+    const parts = location.pathname.split('/').filter(Boolean);
+    const sub = parts[1] || 'dashboard';
+    const mapping: Record<string, string> = {
+      dashboard: 'DASHBOARD',
+      businesses: 'BUSINESSES',
+      plans: 'PLANS',
+      ads: 'ADS',
+      'ai-engine': 'AI_ENGINE',
+      settings: 'SETTINGS',
+      profile: 'AGENCY_PROFILE',
+      demo: 'DEMO',
+    };
+    if (mapping[sub]) setActiveTab(mapping[sub] as any);
+  }, [location.pathname]);
 
   // Data
   const [businesses, setBusinesses] = useState<Business[]>([]);
@@ -33,8 +66,8 @@ export const AgencyPortal: React.FC = () => {
     updatedAt: '',
   });
   const [settings, setSettings] = useState<SystemSettings>({
-    agencyName: 'Tap Review AI Agency Studio',
-    supportEmail: 'support@tapreview.ai',
+    agencyName: 'ReviewScore AI Agency Studio',
+    supportEmail: 'support@reviewscore.ai',
     googleRedirectDelayMs: 1500,
     minStarForGoogle: 4,
     defaultPrompt: '',
@@ -55,7 +88,7 @@ export const AgencyPortal: React.FC = () => {
   const itemsPerPage = 5;
 
   // Agency Profile state
-  const [agencyNameInput, setAgencyNameInput] = useState('Tap Review AI Agency');
+  const [agencyNameInput, setAgencyNameInput] = useState('ReviewScore AI Agency');
   const [agencyCategory, setAgencyCategory] = useState('SaaS & Digital Marketing Agency');
   const [agencyPhone, setAgencyPhone] = useState('+91 99000 88776');
   const [agencyAddress, setAgencyAddress] = useState('500 Tech Park, Suite 100');
@@ -437,45 +470,197 @@ export const AgencyPortal: React.FC = () => {
     }
   };
 
+  // Shared sidebar menu items definition
+  const sidebarMenuItems = [
+    { id: 'DASHBOARD', label: 'Platform Overview', icon: Activity },
+    { id: 'BUSINESSES', label: 'Businesses & Hierarchy', icon: Building2 },
+    { id: 'AGENCY_PROFILE', label: 'Agency Profile & Scanner', icon: QrCode },
+    { id: 'DEMO', label: 'Demo Management', icon: Play },
+    { id: 'PLANS', label: 'SaaS Plans', icon: CreditCard },
+    { id: 'ADS', label: 'Ad Banners', icon: Megaphone },
+    { id: 'AI_ENGINE', label: 'AI Engine & Prompt', icon: Sparkles },
+    { id: 'SETTINGS', label: 'Agency Settings', icon: Settings },
+  ];
+
+  const handleSidebarTabClick = (tabId: string) => {
+    setSelectedBusiness(null);
+    setActiveTab(tabId as any);
+    const path = tabToPath[tabId] || 'dashboard';
+    navigate(`/agency/${path}`, { replace: true });
+    setMobileMenuOpen(false);
+  };
+
+  const handleOnboardClick = () => {
+    setEditingBiz(null);
+    setBizName('');
+    setBizCategory('');
+    setOwnerName('');
+    setOwnerEmail('');
+    setOwnerPassword('');
+    setPlanId('plan-pro');
+    setBranchLimit(5);
+    setMonthlyTokens(50000);
+    setIsBizModalOpen(true);
+    setMobileMenuOpen(false);
+  };
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
+
+  const sidebarScrollRef = useLenisSmoothScroll<HTMLDivElement>(true, {
+    duration: 1.05,
+    wheelMultiplier: 0.9,
+    smoothTouch: true,
+    touchMultiplier: 1.2,
+  });
+
+  const mobileDrawerNavScrollRef = useLenisSmoothScroll<HTMLElement>(true, {
+    duration: 1.05,
+    smoothTouch: true,
+    touchMultiplier: 1.3,
+  });
+
+  const mainScrollRef = useLenisSmoothScroll<HTMLElement>(true, {
+    duration: 1.15,
+    wheelMultiplier: 1,
+    smoothTouch: true,
+    touchMultiplier: 1.5,
+  });
+
   return (
-    <div className="flex flex-col md:flex-row min-h-[calc(100vh-57px)] bg-[#F5F7FB] font-sans">
-      {/* Left Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-white border-r border-[#DCE3EC] shrink-0 flex flex-col justify-between">
-        <div className="p-4 space-y-5">
-          {/* Agency Admin Profile Badge */}
-          <div className="p-3.5 bg-[#EEF2F7] text-[#1E293B] rounded-2xl border border-[#DCE3EC] space-y-1.5 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
-            <div className="flex items-center space-x-1.5 text-[#2563EB] font-extrabold text-[10px] uppercase tracking-wider">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#2563EB]" />
-              <span>Agency Super Admin</span>
+    <div className="flex-1 flex flex-col md:flex-row h-full min-h-0 overflow-hidden overflow-x-hidden bg-[#F5F7FB] font-sans">
+
+      {/* ===== MOBILE HEADER BAR (md:hidden) ===== */}
+      <div className="md:hidden relative flex items-center justify-between px-4 py-3 bg-white border-b border-[#DCE3EC] z-40 shrink-0">
+        <div className="flex items-center space-x-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-lg bg-[#2563EB] flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-4 h-4 text-white" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-extrabold text-[#2563EB] uppercase tracking-wider">Admin</p>
+            <p className="text-xs font-extrabold text-[#1E293B] truncate">{settings?.agencyName || 'ReviewScore AI Agency'}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          className="w-10 h-10 flex items-center justify-center rounded-xl border border-[#DCE3EC] bg-[#EEF2F7] text-[#1E293B] cursor-pointer shrink-0"
+          aria-label="Open navigation menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* ===== MOBILE DRAWER OVERLAY (md:hidden) ===== */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-slate-900/40 animate-in fade-in"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          {/* Drawer panel - slide from left */}
+          <div className="absolute left-0 inset-y-0 w-72 max-w-[85vw] bg-white flex flex-col shadow-xl animate-in slide-in-from-left duration-300">
+            {/* Drawer Header */}
+            <div className="flex items-center justify-between md:p-4 p-4 md:pt-4 pt-[calc(env(safe-area-inset-top)+1rem)] border-b border-[#DCE3EC]">
+              <div className="flex items-center space-x-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-[#2563EB] flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-4 h-4 text-white" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-extrabold text-[#2563EB] uppercase tracking-wider">Agency Super Admin</p>
+                  <p className="text-sm font-extrabold text-[#1E293B] truncate">{settings?.agencyName || 'ReviewScore AI Agency'}</p>
+                  <div className="flex items-center space-x-1 mt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
+                    <span className="text-[10px] text-[#64748B] font-medium">Live Database Sync</span>
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-9 h-9 rounded-full bg-[#EEF2F7] text-[#64748B] hover:text-[#1E293B] flex items-center justify-center cursor-pointer border border-[#DCE3EC] shrink-0"
+                aria-label="Close navigation menu"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <h2 className="font-extrabold text-sm truncate text-[#1E293B]">{settings?.agencyName || 'Tap Review AI Agency'}</h2>
-            <div className="flex items-center space-x-1.5 pt-0.5">
-              <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" />
-              <span className="text-[10px] text-[#64748B] font-bold">Live Database Sync</span>
+
+            {/* Drawer Nav */}
+            <nav ref={mobileDrawerNavScrollRef} className="flex-1 overflow-y-auto overscroll-contain min-h-0">
+              <div className="p-3 space-y-1">
+              {sidebarMenuItems.map(tab => {
+                const Icon = tab.icon;
+                const active = activeTab === tab.id && !selectedBusiness;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => handleSidebarTabClick(tab.id)}
+                    className={`w-full flex items-center space-x-2.5 px-3.5 py-3 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                      active
+                        ? 'clay-btn-primary'
+                        : 'text-[#64748B] hover:text-[#1E293B] hover:bg-[#EEF2F7]'
+                    }`}
+                  >
+                    <Icon className={`w-4 h-4 ${active ? 'text-white' : 'text-[#64748B]'}`} />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+              </div>
+            </nav>
+
+            {/* Drawer Footer */}
+            <div className="p-4 border-t border-[#DCE3EC] bg-[#F5F7FB]">
+              <button
+                onClick={handleOnboardClick}
+                className="w-full py-2.5 clay-btn-primary text-xs flex items-center justify-center space-x-1.5 cursor-pointer"
+              >
+                <Plus className="w-4 h-4 text-white" />
+                <span>Onboard Business</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== DESKTOP SIDEBAR (hidden on mobile) ===== */}
+      <aside className="hidden md:flex w-64 bg-white border-r border-[#DCE3EC] shrink-0 flex-col justify-between h-full overflow-hidden">
+        <div ref={sidebarScrollRef} className="overflow-y-auto overscroll-contain flex-1 min-h-0">
+          <div className="p-4 space-y-5">
+          {/* Agency Admin Profile Badge */}
+          <div className="p-2.5 bg-[#EEF2F7] rounded-xl border border-[#DCE3EC] flex items-center space-x-2.5 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
+            <div className="w-8 h-8 rounded-lg bg-[#2563EB] flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-4 h-4 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center space-x-1.5">
+                <ShieldCheck className="w-3 h-3 text-[#2563EB]" />
+                <span className="text-[10px] font-bold text-[#2563EB] uppercase tracking-wider">Agency Super Admin</span>
+              </div>
+              <h2 className="font-bold text-sm truncate text-[#1E293B] mt-0.5">{settings?.agencyName || 'ReviewScore AI Agency'}</h2>
+              <div className="flex items-center space-x-1.5 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E]" />
+                <span className="text-[10px] text-[#64748B] font-medium">Live Database Sync</span>
+              </div>
             </div>
           </div>
 
           {/* Sidebar Menu Items */}
           <nav className="space-y-1">
-            {[
-              { id: 'DASHBOARD', label: 'Platform Overview', icon: Activity },
-              { id: 'BUSINESSES', label: 'Businesses & Hierarchy', icon: Building2 },
-              { id: 'AGENCY_PROFILE', label: 'Agency Profile & Scanner', icon: QrCode },
-              { id: 'DEMO', label: 'Demo Management', icon: Play },
-              { id: 'PLANS', label: 'SaaS Plans', icon: CreditCard },
-              { id: 'ADS', label: 'Ad Banners', icon: Megaphone },
-              { id: 'AI_ENGINE', label: 'AI Engine & Prompt', icon: Sparkles },
-              { id: 'SETTINGS', label: 'Agency Settings', icon: Settings },
-            ].map(tab => {
+            {sidebarMenuItems.map(tab => {
               const Icon = tab.icon;
               const active = activeTab === tab.id && !selectedBusiness;
               return (
                 <button
                   key={tab.id}
-                  onClick={() => {
-                    setSelectedBusiness(null);
-                    setActiveTab(tab.id as any);
-                  }}
+                  onClick={() => handleSidebarTabClick(tab.id)}
                   className={`w-full flex items-center space-x-2.5 px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                     active
                       ? 'clay-btn-primary'
@@ -488,23 +673,13 @@ export const AgencyPortal: React.FC = () => {
               );
             })}
           </nav>
+          </div>
         </div>
 
         {/* Sidebar Footer Action */}
         <div className="p-4 border-t border-[#DCE3EC] bg-[#F5F7FB]">
           <button
-            onClick={() => {
-              setEditingBiz(null);
-              setBizName('');
-              setBizCategory('');
-              setOwnerName('');
-              setOwnerEmail('');
-              setOwnerPassword('');
-              setPlanId('plan-pro');
-              setBranchLimit(5);
-              setMonthlyTokens(50000);
-              setIsBizModalOpen(true);
-            }}
+            onClick={handleOnboardClick}
             className="w-full py-2.5 clay-btn-primary text-xs flex items-center justify-center space-x-1.5 cursor-pointer"
           >
             <Plus className="w-4 h-4 text-white" />
@@ -514,15 +689,16 @@ export const AgencyPortal: React.FC = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 space-y-6">
+      <main ref={mainScrollRef} className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
+        <div className="p-4 sm:p-6 md:p-8 space-y-6">
 
       {/* DETAILED BUSINESS HIERARCHY VIEW */}
       {selectedBusiness ? (
         <div className="space-y-6">
           {/* Breadcrumb Header */}
-          <div className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-4">
+          <div className="clay-card bg-white p-4 sm:p-6 border border-[#DCE3EC] space-y-4">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#E8EDF5]">
-              <div className="space-y-1">
+              <div className="space-y-1 min-w-0">
                 <button
                   type="button"
                   onClick={() => setSelectedBusiness(null)}
@@ -531,21 +707,21 @@ export const AgencyPortal: React.FC = () => {
                   <ArrowLeft className="w-4 h-4" />
                   <span>Back to Master Business List</span>
                 </button>
-                <div className="flex items-center space-x-3">
-                  <h2 className="text-2xl font-extrabold text-[#1E293B] tracking-tight">{selectedBusiness.name}</h2>
-                  <span className="px-2.5 py-1 bg-[#EEF2F7] text-[#2563EB] font-extrabold text-xs rounded-full border border-[#DCE3EC]">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-[#1E293B] tracking-tight">{selectedBusiness.name}</h2>
+                  <span className="px-2.5 py-1 bg-[#EEF2F7] text-[#2563EB] font-extrabold text-xs rounded-full border border-[#DCE3EC] whitespace-nowrap">
                     {selectedBusiness.planName || 'Pro Plan'}
                   </span>
-                  <span className="px-2.5 py-1 bg-[#22C55E]/10 text-[#22C55E] font-bold text-xs rounded-full border border-[#22C55E]/20">
+                  <span className="px-2.5 py-1 bg-[#22C55E]/10 text-[#22C55E] font-bold text-xs rounded-full border border-[#22C55E]/20 whitespace-nowrap">
                     {selectedBusiness.status}
                   </span>
                 </div>
-                <p className="text-xs text-[#64748B]">
-                  Business Owner: <strong className="text-[#1E293B]">{selectedBusiness.ownerName}</strong> ({selectedBusiness.ownerEmail}) • Category: {selectedBusiness.category}
+                <p className="text-[11px] sm:text-xs text-[#64748B]">
+                  Owner: <strong className="text-[#1E293B]">{selectedBusiness.ownerName}</strong> ({selectedBusiness.ownerEmail}) • {selectedBusiness.category}
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 flex-nowrap">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -559,10 +735,10 @@ export const AgencyPortal: React.FC = () => {
                     setBranchServiceTags('');
                     setIsBranchModalOpen(true);
                   }}
-                  className="px-4 py-2 bg-[#2563EB] text-white rounded-xl shadow-sm hover:bg-[#1f4fc4] flex items-center space-x-2 text-sm font-semibold"
+                  className="px-4 py-2 bg-[#2563EB] text-white rounded-xl shadow-sm hover:bg-[#1f4fc4] flex items-center justify-center space-x-2 text-xs sm:text-sm font-semibold"
                 >
                   <Plus className="w-4 h-4 text-white" />
-                  <span>Add Branch Location</span>
+                  <span>Add Branch</span>
                 </button>
 
                 <button
@@ -580,17 +756,17 @@ export const AgencyPortal: React.FC = () => {
                     setMonthlyTokens(selectedBusiness.monthlyTokenLimit);
                     setIsBizModalOpen(true);
                   }}
-                  className="px-4 py-2 bg-white border border-[#DCE3EC] rounded-xl text-[#1E293B] hover:bg-[#F7F9FC] flex items-center space-x-2 text-sm font-semibold"
+                  className="px-4 py-2 bg-white border border-[#DCE3EC] rounded-xl text-[#1E293B] hover:bg-[#F7F9FC] flex items-center justify-center space-x-2 text-xs sm:text-sm font-semibold"
                 >
                   <Edit className="w-3.5 h-3.5 text-[#1E293B]" />
-                  <span>Edit Business</span>
+                  <span>Edit</span>
                 </button>
                 <button
                   onClick={() => handleDeleteBusiness(selectedBusiness.id)}
-                  className="px-4 py-2 bg-white border border-[#FEE2E2] text-[#EF4444] hover:bg-[#EF4444] hover:text-white rounded-xl flex items-center space-x-2 text-sm font-semibold shadow-sm transition-colors"
+                  className="px-4 py-2 bg-white border border-[#FEE2E2] text-[#EF4444] hover:bg-[#EF4444] hover:text-white rounded-xl flex items-center justify-center space-x-2 text-xs sm:text-sm font-semibold shadow-sm transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete Business</span>
+                  <span>Delete</span>
                 </button>
               </div>
             </div>
@@ -642,15 +818,15 @@ export const AgencyPortal: React.FC = () => {
           </div>
 
           {/* LISTED BRANCHES HIERARCHY */}
-          <div className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-extrabold text-[#1E293B] flex items-center space-x-2">
-                  <Building2 className="w-5 h-5 text-[#2563EB]" />
-                  <span>Listed Branches under {selectedBusiness.name} ({businessBranches.length})</span>
+          <div className="clay-card bg-white p-4 sm:p-6 border border-[#DCE3EC] space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="text-sm sm:text-lg font-extrabold text-[#1E293B] flex items-center space-x-2">
+                  <Building2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#2563EB] shrink-0" />
+                  <span className="truncate">Branches under {selectedBusiness.name} ({businessBranches.length})</span>
                 </h3>
-                <p className="text-xs text-[#64748B]">
-                  Each branch has its own Google Place ID, QR code generator, and review suggestion highlights.
+                <p className="text-[11px] sm:text-xs text-[#64748B] mt-0.5">
+                  Each branch has its own Google Place ID, QR code, and review highlights.
                 </p>
               </div>
 
@@ -665,7 +841,7 @@ export const AgencyPortal: React.FC = () => {
                   setGoogleReviewUrl('https://maps.google.com');
                   setIsBranchModalOpen(true);
                 }}
-                className="px-3.5 py-1.5 clay-btn-primary text-xs flex items-center space-x-1 cursor-pointer"
+                className="px-3.5 py-2 sm:py-1.5 clay-btn-primary text-xs flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
               >
                 <Plus className="w-3.5 h-3.5 text-white" />
                 <span>Add Branch</span>
@@ -687,54 +863,50 @@ export const AgencyPortal: React.FC = () => {
                 {businessBranches.map(branch => (
                   <div
                     key={branch.id}
-                    className="bg-[#EEF2F7] p-5 rounded-2xl border border-[#DCE3EC] space-y-4 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]"
+                    className="bg-[#EEF2F7] p-4 sm:p-5 rounded-2xl border border-[#DCE3EC] space-y-3 sm:space-y-4 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]"
                   >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="font-extrabold text-[#1E293B] text-base flex items-center space-x-2">
-                          <span>{branch.name}</span>
-                          <span className="text-[10px] bg-white text-[#1E293B] font-bold px-2 py-0.5 rounded-md border border-[#DCE3EC]">
-                            {branch.city}
-                          </span>
+                    {/* Branch Name + Rating */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-extrabold text-[#1E293B] text-sm sm:text-base flex items-center flex-wrap gap-1.5">
+                          <span className="truncate">{branch.name}</span>
+                          {branch.city && (
+                            <span className="text-[10px] bg-white text-[#1E293B] font-bold px-2 py-0.5 rounded-md border border-[#DCE3EC] whitespace-nowrap shrink-0">
+                              {branch.city}
+                            </span>
+                          )}
                         </h4>
-                        <p className="text-xs text-[#64748B] flex items-center space-x-1 mt-0.5 font-medium">
-                          <MapPin className="w-3 h-3 text-[#2563EB] shrink-0" />
-                          <span>{branch.address}</span>
-                        </p>
+                        {branch.address && (
+                          <p className="text-[11px] sm:text-xs text-[#64748B] flex items-center space-x-1 mt-1 font-medium">
+                            <MapPin className="w-3 h-3 text-[#2563EB] shrink-0" />
+                            <span className="truncate">{branch.address}</span>
+                          </p>
+                        )}
                       </div>
-
-                      <button
-                        onClick={() => {
-                          setSelectedQrBranch(branch);
-                          setIsQrModalOpen(true);
-                        }}
-                        className="px-3 py-1.5 clay-btn-primary text-xs flex items-center space-x-1.5 cursor-pointer"
-                      >
-                        <QrCode className="w-3.5 h-3.5 text-white" />
-                        <span>QR Code</span>
-                      </button>
+                      {/* Rating badge */}
+                      <span className="shrink-0 text-xs font-extrabold text-[#F59E0B] bg-white px-2.5 py-1 rounded-full border border-[#DCE3EC] flex items-center space-x-1 whitespace-nowrap">
+                        <Star className="w-3 h-3 fill-[#F59E0B] text-[#F59E0B]" />
+                        <span>{branch.avgRating || 5.0}</span>
+                      </span>
                     </div>
 
                     {/* Branch Metadata */}
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-white p-3 rounded-xl border border-[#DCE3EC]">
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-white p-2.5 sm:p-3 rounded-xl border border-[#DCE3EC]">
                       <div>
                         <span className="text-[10px] font-bold text-[#64748B] uppercase block">Phone</span>
-                        <span className="font-bold text-[#1E293B]">{branch.phone || 'N/A'}</span>
+                        <span className="font-bold text-[#1E293B] text-[11px] sm:text-xs">{branch.phone || 'N/A'}</span>
                       </div>
                       <div>
-                        <span className="text-[10px] font-bold text-[#64748B] uppercase block">Rating</span>
-                        <span className="font-bold text-[#F59E0B] flex items-center space-x-1">
-                          <Star className="w-3 h-3 fill-[#F59E0B] text-[#F59E0B] inline" />
-                          <span>{branch.avgRating || 5.0} ({branch.totalReviews || 0} reviews)</span>
-                        </span>
+                        <span className="text-[10px] font-bold text-[#64748B] uppercase block">Reviews</span>
+                        <span className="font-bold text-[#1E293B] text-[11px] sm:text-xs">{branch.totalReviews || 0} collected</span>
                       </div>
                     </div>
 
-                    {/* Highlights / Suggestions Configured for Customer Portal */}
+                    {/* Highlights / Suggestions */}
                     <div className="space-y-1.5">
                       <span className="text-[10px] font-extrabold text-[#1E293B] uppercase tracking-wider flex items-center space-x-1">
                         <Tag className="w-3 h-3 text-[#2563EB]" />
-                        <span>Customer Review Highlights ({branch.serviceTags?.length || 0})</span>
+                        <span>Highlights ({branch.serviceTags?.length || 0})</span>
                       </span>
                       <div className="flex flex-wrap gap-1">
                         {(branch.serviceTags || ['Friendly Staff', 'Gentle Care', 'Clean Environment']).map((tag, tIdx) => (
@@ -748,24 +920,43 @@ export const AgencyPortal: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Links & Delete */}
-                    <div className="pt-2 border-t border-[#DCE3EC] flex items-center justify-between text-xs">
-                      <a
-                        href={branch.googleReviewUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-[#2563EB] hover:underline flex items-center space-x-1 text-[11px] font-bold"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        <span>Google Review Link</span>
-                      </a>
+                    {/* Actions Row */}
+                    <div className="pt-2 border-t border-[#DCE3EC] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedQrBranch(branch);
+                            setIsQrModalOpen(true);
+                          }}
+                          className="px-3 py-1.5 clay-btn-primary text-xs flex items-center space-x-1.5 cursor-pointer"
+                        >
+                          <QrCode className="w-3.5 h-3.5 text-white" />
+                          <span>QR Code</span>
+                        </button>
+                        {branch.googleReviewUrl && branch.googleReviewUrl !== 'https://maps.google.com' ? (
+                          <a
+                            href={branch.googleReviewUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[#2563EB] hover:underline flex items-center space-x-1 text-[11px] font-bold px-2 py-1.5"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>Google Page</span>
+                          </a>
+                        ) : (
+                          <span className="text-[11px] text-[#94A3B8] font-bold px-2 py-1.5 flex items-center space-x-1 cursor-not-allowed" title="Google Review URL not configured">
+                            <ExternalLink className="w-3 h-3" />
+                            <span>No Google URL</span>
+                          </span>
+                        )}
+                      </div>
 
                       <button
                         onClick={() => handleDeleteBranch(branch.id)}
-                        className="text-[#EF4444] hover:underline text-xs font-bold flex items-center space-x-1 cursor-pointer"
+                        className="text-[#EF4444] hover:underline text-xs font-bold flex items-center space-x-1 cursor-pointer px-2 py-1.5 self-end sm:self-auto"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        <span>Delete Branch</span>
+                        <span>Delete</span>
                       </button>
                     </div>
                   </div>
@@ -964,18 +1155,65 @@ export const AgencyPortal: React.FC = () => {
               </div>
 
               {/* Master Business List with Hierarchy Click */}
-              <div className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-4">
-                <div className="flex items-center justify-between">
+              <div className="clay-card bg-white p-4 sm:p-6 border border-[#DCE3EC] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <h3 className="text-base font-extrabold text-[#1E293B]">Onboarded SaaS Businesses</h3>
-                    <p className="text-xs text-[#64748B]">Click any business row to inspect its branches, QR codes, and review activity.</p>
+                    <h3 className="text-sm sm:text-base font-extrabold text-[#1E293B]">Onboarded SaaS Businesses</h3>
+                    <p className="text-[11px] sm:text-xs text-[#64748B]">Click any business to inspect its branches, QR codes, and review activity.</p>
                   </div>
-                  <span className="text-xs font-extrabold text-[#2563EB] bg-[#EEF2F7] px-3 py-1 rounded-full border border-[#DCE3EC]">
-                    {businesses.length} Businesses Registered
+                  <span className="text-xs font-extrabold text-[#2563EB] bg-[#EEF2F7] px-3 py-1 rounded-full border border-[#DCE3EC] shrink-0 self-start sm:self-auto whitespace-nowrap">
+                    {businesses.length} Businesses
                   </span>
                 </div>
 
-                <div className="overflow-x-auto">
+                {/* MOBILE CARDS (md:hidden) */}
+                <div className="md:hidden space-y-3">
+                  {businesses.length === 0 ? (
+                    <EmptyState title="No Data" description="No business records found in database" />
+                  ) : (
+                    businesses.map(b => (
+                      <div
+                        key={b.id}
+                        onClick={() => loadBusinessDetails(b)}
+                        className="bg-[#EEF2F7] p-4 rounded-xl border border-[#DCE3EC] space-y-3 cursor-pointer active:scale-[0.98] transition-transform"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h4 className="font-extrabold text-sm text-[#1E293B] truncate">{b.name}</h4>
+                            <p className="text-[11px] text-[#64748B] truncate mt-0.5">{b.ownerName} • {b.ownerEmail}</p>
+                          </div>
+                          <span className="px-2 py-0.5 bg-[#22C55E]/10 text-[#22C55E] rounded-full text-[10px] font-bold shrink-0">{b.status}</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div className="bg-white p-2.5 rounded-lg border border-[#DCE3EC]">
+                            <span className="text-[10px] font-bold text-[#64748B] uppercase block">Plan</span>
+                            <span className="font-bold text-[#1E293B] truncate block">{b.planName}</span>
+                          </div>
+                          <div className="bg-white p-2.5 rounded-lg border border-[#DCE3EC]">
+                            <span className="text-[10px] font-bold text-[#64748B] uppercase block">Branches</span>
+                            <span className="font-bold text-[#1E293B]">{b.branchLimit} Locations</span>
+                          </div>
+                        </div>
+                        <div className="bg-white p-2.5 rounded-lg border border-[#DCE3EC]">
+                          <span className="text-[10px] font-bold text-[#64748B] uppercase block">Monthly Tokens</span>
+                          <span className="font-mono font-bold text-[#2563EB] text-xs">{b.tokensUsedThisMonth.toLocaleString()} / {b.monthlyTokenLimit.toLocaleString()}</span>
+                          <div className="w-full bg-[#DCE3EC] h-1.5 mt-1.5 rounded-full overflow-hidden">
+                            <div className="bg-[#2563EB] h-full rounded-full" style={{ width: `${Math.min(100, (b.tokensUsedThisMonth / b.monthlyTokenLimit) * 100)}%` }} />
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-end">
+                          <span className="text-xs font-bold text-[#2563EB] flex items-center space-x-1">
+                            <span>Inspect</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* DESKTOP TABLE (hidden on mobile) */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="clay-table text-left text-xs w-full">
                     <thead>
                       <tr>
@@ -1348,7 +1586,7 @@ export const AgencyPortal: React.FC = () => {
                 </div>
 
                 <form onSubmit={handleSaveAgencyProfile} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-[#1E293B] mb-1">Agency Business Name</label>
                       <input
@@ -1356,7 +1594,7 @@ export const AgencyPortal: React.FC = () => {
                         required
                         value={agencyNameInput}
                         onChange={e => setAgencyNameInput(e.target.value)}
-                        placeholder="e.g. Tap Review AI Agency"
+                        placeholder="e.g. ReviewScore AI Agency"
                         className="w-full px-3.5 py-2.5 text-xs clay-input"
                       />
                     </div>
@@ -1460,7 +1698,7 @@ export const AgencyPortal: React.FC = () => {
                     />
                   </div>
 
-                  <div className="pt-2">
+                  <div className="pt-2 flex justify-center">
                     <button
                       type="submit"
                       disabled={isSavingAgencyProfile}
@@ -1604,6 +1842,7 @@ export const AgencyPortal: React.FC = () => {
           {activeTab === 'DEMO' && <DemoManagementTab />}
         </>
       )}
+        </div>
       </main>
 
       {/* ONBOARD / EDIT BUSINESS MODAL */}
@@ -1726,17 +1965,17 @@ export const AgencyPortal: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-2 flex justify-end space-x-2">
+          <div className="pt-3 border-t border-[#E8EDF5] flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
             <button
               type="button"
               onClick={() => setIsBizModalOpen(false)}
-              className="px-4 py-2.5 clay-btn-secondary text-xs"
+              className="w-full sm:w-auto px-5 py-2.5 clay-btn-secondary text-xs font-bold flex items-center justify-center cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2.5 clay-btn-primary text-xs cursor-pointer"
+              className="w-full sm:w-auto px-5 py-2.5 clay-btn-primary text-xs font-bold flex items-center justify-center cursor-pointer shadow-xs"
             >
               Save Business
             </button>

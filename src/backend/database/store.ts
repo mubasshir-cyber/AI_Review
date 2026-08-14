@@ -408,6 +408,105 @@ class DatabaseStore {
     return res.rows.map(mapBusiness);
   }
 
+  // ==========================================
+  // AGENCY PROFILE (biz-agency + branch pair)
+  // ==========================================
+  private readonly AGENCY_BIZ_ID = 'biz-agency';
+  private readonly AGENCY_BRANCH_ID = 'branch-agency-main';
+  private readonly AGENCY_DEFAULT_BUSINESS = {
+    name: 'ReviewScore AI Agency',
+    ownerId: 'user-admin-1',
+    ownerName: 'Agency Super Admin',
+    ownerEmail: 'admin@agency.com',
+    category: 'SaaS & Digital Marketing Agency',
+    planId: 'plan-enterprise',
+    planName: 'Enterprise Agency Plan',
+    branchLimit: 50,
+    monthlyTokenLimit: 500000,
+  } as const;
+  private readonly AGENCY_DEFAULT_BRANCH = {
+    name: 'Agency Headquarters',
+    address: '500 Tech Park, Suite 100',
+    city: 'Mumbai',
+    state: 'Maharashtra',
+    zipCode: '400051',
+    phone: '+91 99000 88776',
+    googleReviewUrl: 'https://search.google.com/local/writereview?placeid=ChIJAgencyReviewPlaceId',
+    serviceTags: ['AI Software Setup', 'Fast Customer Support', 'High Marketing ROI', 'Smooth Onboarding', '5-Star Service'],
+    status: 'ACTIVE' as const,
+  } as const;
+
+  async getAgencyProfile(): Promise<{ business: Business; branch: Branch }> {
+    let business = await this.getBusinessById(this.AGENCY_BIZ_ID);
+    if (!business) {
+      business = await this.createBusiness({
+        id: this.AGENCY_BIZ_ID,
+        ...this.AGENCY_DEFAULT_BUSINESS,
+        status: 'ACTIVE',
+        tokensUsedThisMonth: 0,
+      });
+    }
+
+    let branches = await this.getBranches(this.AGENCY_BIZ_ID);
+    let branch: Branch | undefined = branches.find(b => b.id === this.AGENCY_BRANCH_ID) || branches[0];
+
+    if (!branch) {
+      branch = await this.createBranch({
+        id: this.AGENCY_BRANCH_ID,
+        businessId: this.AGENCY_BIZ_ID,
+        ...this.AGENCY_DEFAULT_BRANCH,
+      });
+    }
+
+    // Also keep system_settings.agencyName in sync for sidebar badges
+    try {
+      const settings = await this.getSettings();
+      if (settings.agencyName !== business.name) {
+        await this.updateSettings({ agencyName: business.name });
+      }
+    } catch (e) {
+      // Ignore — settings sync is best-effort
+    }
+
+    return { business, branch };
+  }
+
+  async updateAgencyProfile(input: {
+    business?: Partial<Business>;
+    branch?: Partial<Branch>;
+  }): Promise<{ business: Business; branch: Branch }> {
+    const { business, branch } = await this.getAgencyProfile();
+
+    let updatedBiz = business;
+    if (input.business && Object.keys(input.business).length > 0) {
+      const cleaned: Partial<Business> = { ...input.business };
+      delete (cleaned as any).id;
+      delete (cleaned as any).createdAt;
+      delete (cleaned as any).tokensUsedThisMonth;
+      const result = await this.updateBusiness(business.id, cleaned);
+      if (result) updatedBiz = result;
+
+      // Sync agency name in system_settings so sidebar/navbar reflect the change
+      if (input.business.name) {
+        try { await this.updateSettings({ agencyName: input.business.name }); } catch (e) { /* ignore */ }
+      }
+    }
+
+    let updatedBranch = branch;
+    if (input.branch && Object.keys(input.branch).length > 0) {
+      const cleaned: Partial<Branch> = { ...input.branch };
+      delete (cleaned as any).id;
+      delete (cleaned as any).businessId;
+      delete (cleaned as any).createdAt;
+      delete (cleaned as any).totalReviews;
+      delete (cleaned as any).avgRating;
+      const result = await this.updateBranch(branch.id, cleaned);
+      if (result) updatedBranch = result;
+    }
+
+    return { business: updatedBiz, branch: updatedBranch };
+  }
+
   async getBusinessById(id: string): Promise<Business | undefined> {
     const res = await this.query('SELECT * FROM businesses WHERE id = $1', [id]);
     return res.rows[0] ? mapBusiness(res.rows[0]) : undefined;
@@ -1004,8 +1103,8 @@ class DatabaseStore {
     const res = await this.query('SELECT * FROM system_settings WHERE id = 1');
     if (res.rows.length === 0) {
       return {
-        agencyName: 'Tap Review AI Agency Studio',
-        supportEmail: 'support@tapreview.ai',
+        agencyName: 'ReviewScore AI Agency Studio',
+        supportEmail: 'support@reviewscore.ai',
         googleRedirectDelayMs: 1500,
         minStarForGoogle: 4,
         defaultPrompt: 'Generates authentic local business review based on customer feedback.',
@@ -1253,7 +1352,7 @@ class DatabaseStore {
     const sampleNames = ['Alex Morgan', 'Priya Sharma', 'David Kim', 'Sarah Jenkins', 'Carlos Mendez', 'Elena Rostova'];
     const sampleTags = ['Fast Onboarding', 'High Marketing ROI', 'AI Software Setup', 'Smooth Support'];
     const sampleTexts = [
-      'Tap Review AI completely transformed our customer review collection! We got 45 new 5-star Google reviews in the first week.',
+      'ReviewScore AI completely transformed our customer review collection! We got 45 new 5-star Google reviews in the first week.',
       'Extremely impressed with the AI review generator. Our customers love how effortless it is to leave feedback.',
       'The private feedback gatekeeper saved our clinic from a 1-star review when an appointment was delayed. Solved it privately!',
       'Setting up table tent QR codes was super easy. Highest conversion rate of any review tool we have tried.',

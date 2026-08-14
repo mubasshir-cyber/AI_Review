@@ -299,7 +299,7 @@ export const CustomerPortal: React.FC = () => {
             className="w-full appearance-none bg-[#EEF2F7] text-[#1E293B] font-bold px-3 py-1.5 pr-8 rounded-xl border border-[#DCE3EC] cursor-pointer text-xs focus:outline-none"
           >
             <option value="" disabled>Select a Business Branch to Demo</option>
-            <option value="branch-agency-main">🏢 Tap Review AI Agency (Demo)</option>
+            <option value="branch-agency-main">🏢 ReviewScore AI Agency (Demo)</option>
             {allBranches.filter(b => b.id !== 'branch-agency-main').map(b => {
               const biz = allBusinesses.find(bz => bz.id === b.businessId);
               return (
@@ -341,19 +341,22 @@ export const CustomerPortal: React.FC = () => {
                 <p className="text-xs text-slate-500 mt-1">Tap a star for an instant vibe check ✨</p>
               </div>
 
-              <div className="flex items-center justify-center space-x-2 py-4">
+              <div className="flex justify-center items-center gap-1 sm:gap-2 py-4 flex-wrap">
                 {[1, 2, 3, 4, 5].map(star => {
                   const active = (hoverRating || rating) >= star;
                   return (
                     <button
                       key={star}
+                      type="button"
                       onClick={() => handleRatingSelect(star)}
+                      onTouchStart={(e) => { e.preventDefault(); setHoverRating(star); handleRatingSelect(star); }}
                       onMouseEnter={() => setHoverRating(star)}
                       onMouseLeave={() => setHoverRating(0)}
-                      className="p-1.5 focus:outline-none transform hover:scale-115 active:scale-95 transition-all cursor-pointer"
+                      className="shrink-0 min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px] p-1.5 sm:p-2 flex items-center justify-center focus:outline-none transform hover:scale-110 active:scale-95 transition-transform cursor-pointer select-none"
+                      aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                     >
                       <Star
-                        className={`w-10 h-10 sm:w-11 sm:h-11 transition-colors ${
+                        className={`w-8 h-8 sm:w-9 sm:h-9 sm:w-11 sm:h-11 transition-colors ${
                           active ? 'text-amber-400 fill-amber-400 drop-shadow-xs' : 'text-slate-200'
                         }`}
                       />
@@ -362,8 +365,8 @@ export const CustomerPortal: React.FC = () => {
                 })}
               </div>
 
-              <div className="h-6">
-                <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-4 py-1.5 rounded-full border border-blue-200/80 shadow-2xs">
+              <div className="min-h-[28px] flex items-center justify-center">
+                <span className="text-xs font-semibold text-blue-700 bg-blue-50 px-3.5 py-1.5 rounded-full border border-blue-200/80 shadow-2xs inline-block">
                   {hoverRating === 5 || (!hoverRating && rating === 5)
                     ? '😍 Absolutely Slaps! 10/10 ✨'
                     : hoverRating === 4 || (!hoverRating && rating === 4)

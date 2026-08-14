@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Body, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Inject } from '@nestjs/common';
 import { SettingsService } from './settings.service';
-import { ApiKeyConfig, SystemSettings } from '../../../../types';
+import { ApiKeyConfig, SystemSettings, Business, Branch } from '../../../../types';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 
@@ -30,6 +30,18 @@ export class SettingsController {
   @Post('system')
   updateSettings(@Body() body: Partial<SystemSettings>) {
     return this.settingsService.updateSettings(body);
+  }
+
+  @Roles('AGENCY_ADMIN')
+  @Get('agency-profile')
+  getAgencyProfile() {
+    return this.settingsService.getAgencyProfile();
+  }
+
+  @Roles('AGENCY_ADMIN')
+  @Put('agency-profile')
+  updateAgencyProfile(@Body() body: { business?: Partial<Business>; branch?: Partial<Branch> }) {
+    return this.settingsService.updateAgencyProfile(body);
   }
 
   @Roles('AGENCY_ADMIN')

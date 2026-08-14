@@ -72,7 +72,7 @@ async function startServer() {
 
   // 3. Start NestJS server
   await nestApp.listen(PORT, '0.0.0.0');
-  console.log(`🚀 Tap Review AI NestJS Platform Server running on http://0.0.0.0:${PORT}`);
+  console.log(`🚀 ReviewScore AI NestJS Platform Server running on http://0.0.0.0:${PORT}`);
 }
 
 startServer();

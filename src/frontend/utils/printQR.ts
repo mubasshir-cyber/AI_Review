@@ -57,7 +57,7 @@ export function printQRCard(params: PrintQRCardParams) {
           : ''
       }
 
-      <div class="footer-note">Powered by Tap Review AI • ${reviewUrl}</div>
+      <div class="footer-note">Powered by ReviewScore AI • ${reviewUrl}</div>
     </div>
   `;
 
@@ -486,7 +486,7 @@ export async function downloadCardAsPNG(params: PrintQRCardParams) {
   ctx.fillStyle = '#94A3B8';
   ctx.font = '14px monospace';
   ctx.textAlign = 'center';
-  ctx.fillText(`Powered by Tap Review AI`, width / 2, currentY);
+  ctx.fillText(`Powered by ReviewScore AI`, width / 2, currentY);
   ctx.restore();
 
   // Trigger PNG download

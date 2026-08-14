@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { db } from '../../../database/store';
-import { ApiKeyConfig, SystemSettings } from '../../../../types';
+import { ApiKeyConfig, SystemSettings, Business, Branch } from '../../../../types';
 
 @Injectable()
 export class SettingsService {
@@ -22,6 +22,16 @@ export class SettingsService {
   async updateSettings(dto: Partial<SystemSettings>) {
     const updated = await db.updateSettings(dto);
     return { message: 'System settings updated successfully', data: updated };
+  }
+
+  async getAgencyProfile() {
+    const result = await db.getAgencyProfile();
+    return { message: 'Agency profile retrieved successfully', data: result };
+  }
+
+  async updateAgencyProfile(dto: { business?: Partial<Business>; branch?: Partial<Branch> }) {
+    const result = await db.updateAgencyProfile(dto || {});
+    return { message: 'Agency profile updated successfully', data: result };
   }
 
   async resetDemoData(bizId = 'biz-agency') {

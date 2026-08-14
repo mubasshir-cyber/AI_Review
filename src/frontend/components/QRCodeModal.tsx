@@ -28,6 +28,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
 }) => {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [currentLogo, setCurrentLogo] = useState<string>(logoUrl || '');
+  const [includeLogo, setIncludeLogo] = useState<boolean>(false);
   const [frameTitle, setFrameTitle] = useState<string>('Scan to Leave 5★ Google Review');
   const [primaryColor, setPrimaryColor] = useState<string>('#2563EB');
   const [isDownloadingCardPNG, setIsDownloadingCardPNG] = useState(false);
@@ -40,7 +41,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
     if (branch) {
       generateQRWithLogo();
     }
-  }, [branch, currentLogo, primaryColor, reviewUrl]);
+  }, [branch, currentLogo, includeLogo, primaryColor, reviewUrl]);
 
   const generateQRWithLogo = async () => {
     if (!reviewUrl) return;
@@ -70,7 +71,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
         ctx.clearRect(0, 0, size, size);
         ctx.drawImage(qrImg, 0, 0, size, size);
 
-        if (currentLogo && currentLogo.trim() !== '') {
+        if (includeLogo && currentLogo && currentLogo.trim() !== '') {
           const logoImg = new Image();
           logoImg.crossOrigin = 'anonymous';
 
@@ -136,7 +137,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
         primaryColor,
         frameTitle,
         reviewUrl,
-        logoUrl: currentLogo
+        logoUrl: includeLogo ? currentLogo : ''
       });
     } catch (err) {
       console.error(err);
@@ -156,7 +157,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
         primaryColor,
         frameTitle,
         reviewUrl,
-        logoUrl: currentLogo
+        logoUrl: includeLogo ? currentLogo : ''
       });
     } catch (err) {
       console.error(err);
@@ -216,7 +217,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             </div>
 
             <div className="mt-2 text-[9px] text-[#64748B] font-mono font-bold">
-              Powered by Tap Review AI
+              Powered by ReviewScore AI
             </div>
           </div>
         </div>
@@ -233,6 +234,25 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
               onChange={e => setFrameTitle(e.target.value)}
               className="w-full px-3.5 py-2.5 text-xs clay-input"
             />
+          </div>
+
+          <div className="flex items-center justify-between w-full flex-wrap gap-2 min-h-[44px] px-3 py-2 clay-card bg-white border border-[#DCE3EC] rounded-2xl">
+            <label className="font-bold text-[#1E293B] text-xs cursor-pointer select-none flex-1 min-w-0">
+              Include center logo
+            </label>
+            <button
+              type="button"
+              onClick={() => setIncludeLogo(!includeLogo)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 cursor-pointer ${
+                includeLogo ? 'bg-[#2563EB]' : 'bg-[#CBD5E1]'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                  includeLogo ? 'translate-x-5' : 'translate-x-0.5'
+                }`}
+              />
+            </button>
           </div>
 
           <div>
@@ -324,16 +344,16 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
               <button
                 onClick={handleDownloadPNG}
                 disabled={isDownloadingCardPNG || isPrintingCard || isDownloadingPNG}
-                className="py-2.5 px-3 clay-btn-secondary text-xs flex items-center justify-center space-x-1 cursor-pointer disabled:opacity-60"
+                className="h-10 px-2.5 clay-btn-secondary text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 whitespace-nowrap shadow-xs"
               >
                 {isDownloadingPNG ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1E293B]" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1E293B] shrink-0" />
                     <span>Preparing...</span>
                   </>
                 ) : (
                   <>
-                    <Download className="w-3.5 h-3.5" />
+                    <Download className="w-3.5 h-3.5 shrink-0" />
                     <span>QR Only (PNG)</span>
                   </>
                 )}
@@ -342,17 +362,17 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
               <button
                 onClick={handlePrintCard}
                 disabled={isDownloadingCardPNG || isPrintingCard || isDownloadingPNG}
-                className="py-2.5 px-3 clay-btn-secondary text-xs flex items-center justify-center space-x-1 cursor-pointer disabled:opacity-60"
+                className="h-10 px-2.5 clay-btn-secondary text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 whitespace-nowrap shadow-xs"
               >
                 {isPrintingCard ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2563EB]" />
-                    <span>Opening Print...</span>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2563EB] shrink-0" />
+                    <span>Opening...</span>
                   </>
                 ) : (
                   <>
-                    <Printer className="w-3.5 h-3.5 text-[#2563EB]" />
-                    <span>Print / Save PDF</span>
+                    <Printer className="w-3.5 h-3.5 text-[#2563EB] shrink-0" />
+                    <span>Print PDF</span>
                   </>
                 )}
               </button>

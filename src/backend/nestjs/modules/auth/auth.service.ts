@@ -120,10 +120,10 @@ export class AuthService {
         const resetUrl = `${frontendUrl}/login?token=${token}`;
         
         const info = await transporter.sendMail({
-          from: `"Tap Review AI" <${process.env.SMTP_USER || 'support@tapreview.ai'}>`,
+          from: `"ReviewScore AI" <${process.env.SMTP_USER || 'support@reviewscore.ai'}>`,
           to: user.email,
-          subject: 'Password Reset Request - Tap Review AI',
-          text: `You requested a password reset for your Tap Review AI account.\n\nClick the link below to set your new password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you did not request a password reset, please ignore this email.`,
+          subject: 'Password Reset Request - ReviewScore AI',
+          text: `You requested a password reset for your ReviewScore AI account.\n\nClick the link below to set your new password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you did not request a password reset, please ignore this email.`,
           html: `
 <!DOCTYPE html>
 <html>
@@ -131,7 +131,7 @@ export class AuthService {
 <body style="font-family: Arial, sans-serif; background: #f5f7fb; padding: 30px; margin: 0;">
   <div style="max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e8edf5;">
     <div style="background: #2563EB; padding: 32px 40px; text-align: center;">
-      <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 800;">Tap Review AI</h1>
+      <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 800;">ReviewScore AI</h1>
       <p style="color: #bfdbfe; margin: 8px 0 0; font-size: 13px;">Password Reset Request</p>
     </div>
     <div style="padding: 36px 40px;">

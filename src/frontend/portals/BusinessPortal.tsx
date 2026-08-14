@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Branch, Review, Feedback, Advertisement, Business } from '../../types';
@@ -17,6 +18,7 @@ import {
   User, Menu, X, Loader2, ArrowRight, Share2, Sparkle, AlertCircle
 } from 'lucide-react';
 import { CategorySearchDropdown } from '../components/CategorySearchDropdown';
+import { useLenisSmoothScroll } from '../hooks/useLenisSmoothScroll';
 
 export const BusinessPortal: React.FC = () => {
   const { currentBusiness, refetchBusinessData, fetchWithAuth } = useAuth();
@@ -24,6 +26,9 @@ export const BusinessPortal: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'PROFILE' | 'BRANCHES' | 'HIGHLIGHTS' | 'REVIEWS' | 'FEEDBACK' | 'ANALYTICS' | 'SUBSCRIPTION' | 'SETTINGS'>('DASHBOARD');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // Global Loading State
   const [isLoadingData, setIsLoadingData] = useState(true);
@@ -341,38 +346,104 @@ export const BusinessPortal: React.FC = () => {
     { id: 'SETTINGS', label: 'Security & Settings', icon: Lock },
   ];
 
+  const tabToPath: Record<string, string> = {
+    DASHBOARD: 'dashboard',
+    PROFILE: 'profile',
+    BRANCHES: 'branches',
+    HIGHLIGHTS: 'highlights',
+    REVIEWS: 'reviews',
+    FEEDBACK: 'feedback',
+    ANALYTICS: 'analytics',
+    SUBSCRIPTION: 'subscription',
+    SETTINGS: 'settings',
+  };
+
+  useEffect(() => {
+    const parts = location.pathname.split('/').filter(Boolean);
+    const sub = parts[1] || 'dashboard';
+    const mapping: Record<string, any> = {
+      dashboard: 'DASHBOARD',
+      profile: 'PROFILE',
+      branches: 'BRANCHES',
+      highlights: 'HIGHLIGHTS',
+      reviews: 'REVIEWS',
+      feedback: 'FEEDBACK',
+      analytics: 'ANALYTICS',
+      subscription: 'SUBSCRIPTION',
+      settings: 'SETTINGS',
+    };
+    if (mapping[sub]) setActiveTab(mapping[sub]);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
+
+  const sidebarScrollRef = useLenisSmoothScroll<HTMLDivElement>(true, {
+    duration: 1.05,
+    wheelMultiplier: 0.9,
+    smoothTouch: true,
+    touchMultiplier: 1.2,
+  });
+
+  const mainScrollRef = useLenisSmoothScroll<HTMLElement>(true, {
+    duration: 1.15,
+    wheelMultiplier: 1,
+    smoothTouch: true,
+    touchMultiplier: 1.5,
+  });
+
   return (
-    <div className="flex-1 flex flex-col md:flex-row min-h-[calc(100vh-57px)] bg-[#F5F7FB] font-sans">
+    <div className="flex-1 flex flex-col md:flex-row h-full min-h-0 overflow-hidden overflow-x-hidden bg-[#F5F7FB] font-sans">
       {/* Mobile Top Navigation Bar */}
-      <div className="md:hidden bg-white border-b border-[#DCE3EC] px-4 py-3 flex items-center justify-between sticky top-[57px] z-30 shadow-xs">
-        <div className="flex items-center space-x-2.5">
-          <BusinessLogoOrIcon logoUrl={currentBusiness?.logoUrl} name={currentBusiness?.name} className="w-8 h-8 rounded-xl bg-[#EEF2F7] flex items-center justify-center text-[#2563EB] font-bold border border-[#DCE3EC]" iconClassName="w-4 h-4" />
-          <span className="font-extrabold text-[#1E293B] text-sm truncate max-w-[180px]">{currentBusiness?.name || 'Business Portal'}</span>
+      <div className="md:hidden relative bg-white border-b border-[#DCE3EC] px-4 py-3 flex items-center justify-between z-30 shadow-xs shrink-0">
+        <div className="flex items-center space-x-2.5 min-w-0">
+          <BusinessLogoOrIcon logoUrl={currentBusiness?.logoUrl} name={currentBusiness?.name} className="w-8 h-8 rounded-xl bg-[#EEF2F7] flex items-center justify-center text-[#2563EB] font-bold border border-[#DCE3EC] shrink-0" iconClassName="w-4 h-4" />
+          <span className="font-extrabold text-[#1E293B] text-sm truncate">{currentBusiness?.name || 'Business Portal'}</span>
         </div>
         <button
+          type="button"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 rounded-xl bg-[#EEF2F7] hover:bg-[#DCE3EC]/50 text-[#1E293B] transition-colors border border-[#DCE3EC]"
+          className="p-2 rounded-xl bg-[#EEF2F7] hover:bg-[#DCE3EC]/50 text-[#1E293B] transition-colors border border-[#DCE3EC] shrink-0 min-w-[40px] min-h-[40px] flex items-center justify-center cursor-pointer"
+          aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
         >
           {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
+      {/* Mobile Drawer Overlay Backdrop (md:hidden) */}
+      {mobileMenuOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-30 bg-slate-900/40"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* Left Sidebar Navigation (Desktop & Mobile Drawer) */}
-      <aside className={`
-        fixed md:static inset-y-0 left-0 z-40 w-64 bg-white border-r border-[#DCE3EC] flex flex-col justify-between transition-transform duration-300 transform shrink-0
-        ${mobileMenuOpen ? 'translate-x-0 top-[57px]' : '-translate-x-full md:translate-x-0'}
-      `}>
-        <div className="p-4 space-y-5 overflow-y-auto">
+      <aside className={`md:static md:h-full md:translate-x-0 fixed inset-y-0 left-0 z-40 w-64 max-w-[85vw] bg-white border-r border-[#DCE3EC] flex flex-col justify-between transition-transform duration-300 transform shrink-0 overflow-hidden ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div ref={sidebarScrollRef} className="md:p-0 p-0 md:pt-0 pt-0 overflow-y-auto overscroll-contain flex-1 min-h-0">
+          <div className="p-4 md:pt-4 pt-[calc(env(safe-area-inset-top)+3.5rem)] space-y-5">
           {/* Business Profile Header Badge */}
-          <div className="p-3.5 bg-[#EEF2F7] text-[#1E293B] rounded-2xl border border-[#DCE3EC] flex items-center space-x-3 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
-            <BusinessLogoOrIcon logoUrl={currentBusiness?.logoUrl} name={currentBusiness?.name} className="w-10 h-10 rounded-xl bg-white text-[#2563EB] flex items-center justify-center font-extrabold shrink-0 border border-[#DCE3EC] shadow-[1px_1px_3px_rgba(100,116,139,0.06)]" iconClassName="w-5 h-5 text-[#2563EB]" />
+          <div className="p-2.5 bg-[#EEF2F7] text-[#1E293B] rounded-xl border border-[#DCE3EC] flex items-center space-x-2.5 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
+            <BusinessLogoOrIcon logoUrl={currentBusiness?.logoUrl} name={currentBusiness?.name} className="w-8 h-8 rounded-lg bg-white text-[#2563EB] flex items-center justify-center font-bold shrink-0 border border-[#DCE3EC] shadow-[1px_1px_3px_rgba(100,116,139,0.06)]" iconClassName="w-4 h-4 text-[#2563EB]" />
             <div className="min-w-0 flex-1">
-              <h2 className="font-extrabold text-[#1E293B] text-sm truncate">{currentBusiness?.name || 'My Business'}</h2>
-              <div className="flex items-center space-x-1.5 mt-0.5">
-                <span className="text-[10px] font-bold text-[#2563EB] bg-white px-2 py-0.5 rounded-full border border-[#DCE3EC] truncate">
-                  {currentBusiness?.planName || 'Pro Plan'}
+              <span className="text-[10px] font-bold text-[#2563EB] uppercase tracking-wider block truncate leading-none">
+                {currentBusiness?.planName || 'Professional Plan'}
+              </span>
+              <h2 className="font-bold text-[#1E293B] text-sm truncate mt-1">
+                {currentBusiness?.name || 'My Business'}
+              </h2>
+              <div className="flex items-center space-x-1.5 mt-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#22C55E] shrink-0" />
+                <span className="text-[11px] text-[#64748B] font-medium truncate">
+                  {branches.length} {branches.length === 1 ? 'Location' : 'Locations'}
                 </span>
-                <span className="text-[10px] text-[#64748B] font-medium">{branches.length} Location{branches.length !== 1 ? 's' : ''}</span>
               </div>
             </div>
           </div>
@@ -384,11 +455,13 @@ export const BusinessPortal: React.FC = () => {
               const active = activeTab === item.id;
               return (
                 <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id as any);
-                    setMobileMenuOpen(false);
-                  }}
+                      key={item.id}
+                      onClick={() => {
+                        const path = tabToPath[item.id as string] || 'dashboard';
+                        navigate(`/business/${path}`);
+                        setActiveTab(item.id as any);
+                        setMobileMenuOpen(false);
+                      }}
                   className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                     active
                       ? 'clay-btn-primary'
@@ -410,6 +483,7 @@ export const BusinessPortal: React.FC = () => {
               );
             })}
           </nav>
+          </div>
         </div>
 
         {/* Sidebar Footer Quick Action */}
@@ -428,7 +502,8 @@ export const BusinessPortal: React.FC = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 space-y-6">
+      <main ref={mainScrollRef} className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
+        <div className="p-4 sm:p-6 md:p-8 space-y-6">
         {/* Banner Announcement */}
         {ads.length > 0 && activeTab === 'DASHBOARD' && (
           <BannerAd ad={ads[0]} />
@@ -538,13 +613,17 @@ export const BusinessPortal: React.FC = () => {
                   {branches.map(b => (
                     <div key={b.id} className="bg-[#EEF2F7] p-4 rounded-2xl border border-[#DCE3EC] flex flex-col justify-between space-y-3 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
                       <div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-start justify-between">
                           <h4 className="font-extrabold text-[#1E293B] text-sm truncate">{b.name}</h4>
-                          <span className="text-[10px] font-bold text-[#2563EB] bg-white px-2 py-0.5 rounded-full border border-[#DCE3EC] shrink-0">
+                          <span className="inline-flex items-center whitespace-nowrap text-[10px] font-bold text-[#2563EB] bg-white px-2 py-0.5 rounded-full border border-[#DCE3EC] shrink-0">
                             ★ {b.avgRating} ({b.totalReviews})
                           </span>
                         </div>
-                        <p className="text-xs text-[#64748B] mt-1 truncate">{b.address}, {b.city}</p>
+                        {([b.address, b.city].filter(Boolean).length > 0) && (
+                          <p className="text-xs text-[#64748B] mt-1 truncate">
+                            {[b.address, b.city].filter(Boolean).join(', ')}
+                          </p>
+                        )}
                       </div>
 
                       <div className="pt-2 border-t border-[#DCE3EC] flex items-center justify-between">
@@ -849,15 +928,19 @@ export const BusinessPortal: React.FC = () => {
                       <div className="flex items-start justify-between">
                         <div>
                           <h4 className="font-extrabold text-[#1E293B] text-base">{b.name}</h4>
-                          <p className="text-xs text-[#64748B]">{b.address}, {b.city}, {b.state}</p>
+                          {([b.address, b.city, b.state].filter(Boolean).length > 0) && (
+                            <p className="text-xs text-[#64748B] mt-0.5">
+                              {[b.address, b.city, b.state].filter(Boolean).join(', ')}
+                            </p>
+                          )}
                         </div>
-                        <span className="text-xs font-extrabold text-[#2563EB] bg-white px-2.5 py-1 rounded-full border border-[#DCE3EC]">
+                        <span className="inline-flex items-center whitespace-nowrap text-xs font-extrabold text-[#2563EB] bg-white px-2.5 py-1 rounded-full border border-[#DCE3EC] shrink-0">
                           ★ {b.avgRating}
                         </span>
                       </div>
 
                       <div className="text-xs text-[#64748B] space-y-1">
-                        <p><strong className="text-[#1E293B]">Phone:</strong> {b.phone}</p>
+                        <p><strong className="text-[#1E293B]">Phone:</strong> {b.phone || 'Not configured'}</p>
                         <p><strong className="text-[#1E293B]">Reviews Collected:</strong> {b.totalReviews}</p>
                       </div>
 
@@ -1249,6 +1332,7 @@ export const BusinessPortal: React.FC = () => {
             </div>
           </div>
         )}
+        </div>
       </main>
 
       {/* ADVANCED QR STUDIO MODAL */}
