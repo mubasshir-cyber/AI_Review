@@ -315,10 +315,13 @@ export const CategorySearchDropdown: React.FC<CategorySearchDropdownProps> = ({
   required = false,
   className = '',
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const containerRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+    const [isOpen, setIsOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isCustomCategory, setIsCustomCategory] = useState(false);
+    const [customCategory, setCustomCategory] = useState('');
+
+    const containerRef = useRef<HTMLDivElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = searchQuery.trim()
     ? BUSINESS_CATEGORIES.filter(c => c.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -342,10 +345,20 @@ export const CategorySearchDropdown: React.FC<CategorySearchDropdownProps> = ({
   }, [isOpen]);
 
   const handleSelect = (category: string) => {
-    onChange(category);
+  if (category === 'Other') {
+    setIsCustomCategory(true);
+    setCustomCategory('');
     setIsOpen(false);
     setSearchQuery('');
-  };
+    return;
+  }
+
+  setIsCustomCategory(false);
+  setCustomCategory('');
+  onChange(category);
+  setIsOpen(false);
+  setSearchQuery('');
+};
 
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -431,12 +444,49 @@ export const CategorySearchDropdown: React.FC<CategorySearchDropdownProps> = ({
                 </button>
               ))
             )}
+            {/* Other category option */}
+            <div className="border-t border-[#E8EDF5]">
+              <button
+                type="button"
+                onClick={() => handleSelect('Other')}
+                className="w-full text-left px-3.5 py-2.5 text-xs font-semibold text-[#2563EB] hover:bg-[#EEF2FF] transition-colors"
+              >
+                Other
+              </button>
+            </div>
           </div>
 
           {/* Footer count */}
           <div className="px-3 py-1.5 border-t border-[#F1F5F9] text-[10px] text-[#94A3B8] text-right">
             {filtered.length} of {BUSINESS_CATEGORIES.length} categories
           </div>
+        </div>
+      )}
+   
+      {/* Custom Business Category */}
+      {isCustomCategory && (
+        <div className="mt-2">
+          <label className="block mb-1.5 text-xs font-medium text-[#475569]">
+            Custom Business Category
+          </label>
+
+          <input
+            type="text"
+            value={customCategory}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              setCustomCategory(newValue);
+              onChange(newValue.trim());
+            }}
+            placeholder="Enter your business category..."
+            className="w-full px-3.5 py-2.5 text-xs clay-input focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+          />
+
+          {!customCategory.trim() && (
+            <p className="mt-1 text-[10px] text-[#EF4444]">
+              Please enter a business category.
+            </p>
+          )}
         </div>
       )}
     </div>
