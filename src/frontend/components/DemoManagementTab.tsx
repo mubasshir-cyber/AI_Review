@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { Business, Branch } from '../../types';
 import {
   Sparkles, RefreshCw, CheckCircle2, Power, Database, Star, ShieldCheck
 } from 'lucide-react';
 
 export const DemoManagementTab: React.FC = () => {
+  const { fetchWithAuth } = useAuth();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [branches, setBranches] = useState<Branch[]>([]);
   const [selectedBizId, setSelectedBizId] = useState<string>('biz-agency');
@@ -16,7 +18,7 @@ export const DemoManagementTab: React.FC = () => {
   const [privateFeedbacks, setPrivateFeedbacks] = useState<Array<any>>([]);
 
   useEffect(() => {
-    fetch('/api/businesses')
+    fetchWithAuth('/api/businesses')
       .then(res => res.json())
       .then(data => {
         if (data.data) {
@@ -25,7 +27,7 @@ export const DemoManagementTab: React.FC = () => {
       })
       .catch(() => {});
 
-    fetch('/api/branches')
+    fetchWithAuth('/api/branches')
       .then(res => res.json())
       .then(data => {
         if (data.data) {
@@ -33,14 +35,14 @@ export const DemoManagementTab: React.FC = () => {
         }
       })
       .catch(() => {});
-  }, []);
+  }, [fetchWithAuth]);
 
   const handleResetDemoData = async () => {
     if (!confirm('Are you sure you want to reset all demo reviews and feedback back to initial state?')) return;
     setLoading(true);
     setActionMessage('');
     try {
-      const res = await fetch('/api/settings/demo/reset', {
+      const res = await fetchWithAuth('/api/settings/demo/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ businessId: selectedBizId })
@@ -61,7 +63,7 @@ export const DemoManagementTab: React.FC = () => {
     setLoading(true);
     setActionMessage('');
     try {
-      const res = await fetch('/api/settings/demo/generate-reviews', {
+      const res = await fetchWithAuth('/api/settings/demo/generate-reviews', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ count, businessId: selectedBizId, branchId: selectedBranchId })
@@ -88,7 +90,7 @@ export const DemoManagementTab: React.FC = () => {
     setLoading(true);
     setActionMessage('');
     try {
-      const res = await fetch('/api/settings/demo/generate-feedback', {
+      const res = await fetchWithAuth('/api/settings/demo/generate-feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ count, businessId: selectedBizId, branchId: selectedBranchId })

@@ -116,7 +116,20 @@ export const AgencyPortal: React.FC = () => {
   const [planId, setPlanId] = useState('plan-pro');
   const [branchLimit, setBranchLimit] = useState(5);
   const [monthlyTokens, setMonthlyTokens] = useState(50000);
+  const [tokenBizId, setTokenBizId] = useState('');
   const [bizModalError, setBizModalError] = useState('');
+  
+  // Client Subscription Management State
+  const [subManageBizId, setSubManageBizId] = useState('');
+  const [subManagePlanId, setSubManagePlanId] = useState('');
+
+  // Edit Plan State
+  const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
+  const [editPlanName, setEditPlanName] = useState('');
+  const [editPlanPrice, setEditPlanPrice] = useState(0);
+  const [editPlanBranches, setEditPlanBranches] = useState(1);
+  const [editPlanTokens, setEditPlanTokens] = useState(10000);
 
   // Add Branch Modal
   const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
@@ -1290,42 +1303,43 @@ export const AgencyPortal: React.FC = () => {
                     <p className="text-sm text-[#64748B] mt-2 font-medium">Allocate monthly Gemini AI token limits seamlessly to your client accounts.</p>
                   </div>
 
-                  <form
-                    onSubmit={async (e) => {
-                      e.preventDefault();
-                      const target = businesses.find(b => b.id === planId) || businesses[0];
-                      if (!target) return;
-                      try {
-                        await fetchWithAuth(`/api/businesses/${target.id}`, {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ monthlyTokenLimit: monthlyTokens }),
-                        });
-                        showToast(`Successfully allocated ${monthlyTokens.toLocaleString()} tokens to ${target.name}!`);
-                        loadAgencyData();
-                      } catch (err) {
-                        console.error(err);
-                        showToast('Error saving token allocation', 'error');
-                      }
-                    }}
-                    className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end bg-[#F8FAFC] p-5 rounded-2xl border border-[#E2E8F0]/80 shadow-inner"
-                  >
-                    <div className="space-y-2">
-                      <label className="block text-[13px] font-bold text-[#334155] uppercase tracking-wide">Select Business</label>
-                      <div className="relative">
-                        <select
-                          value={planId}
-                          onChange={(e) => {
-                            setPlanId(e.target.value);
-                            const sel = businesses.find(b => b.id === e.target.value);
-                            if (sel) setMonthlyTokens(sel.monthlyTokenLimit);
-                          }}
-                          className="w-full pl-4 pr-10 py-3 text-sm font-semibold text-[#0F172A] bg-white border border-[#CBD5E1] rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all appearance-none outline-none shadow-sm"
-                        >
-                          {businesses.map(b => (
-                            <option key={b.id} value={b.id}>{b.name}</option>
-                          ))}
-                        </select>
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        const targetId = tokenBizId || (businesses.length > 0 ? businesses[0].id : '');
+                        const target = businesses.find(b => b.id === targetId);
+                        if (!target) return;
+                        try {
+                          await fetchWithAuth(`/api/businesses/${target.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ monthlyTokenLimit: monthlyTokens }),
+                          });
+                          showToast(`Successfully allocated ${monthlyTokens.toLocaleString()} tokens to ${target.name}!`);
+                          loadAgencyData();
+                        } catch (err) {
+                          console.error(err);
+                          showToast('Error saving token allocation', 'error');
+                        }
+                      }}
+                      className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end bg-[#F8FAFC] p-5 rounded-2xl border border-[#E2E8F0]/80 shadow-inner"
+                    >
+                      <div className="space-y-2">
+                        <label className="block text-[13px] font-bold text-[#334155] uppercase tracking-wide">Select Business</label>
+                        <div className="relative">
+                          <select
+                            value={tokenBizId || (businesses.length > 0 ? businesses[0].id : '')}
+                            onChange={(e) => {
+                              setTokenBizId(e.target.value);
+                              const sel = businesses.find(b => b.id === e.target.value);
+                              if (sel) setMonthlyTokens(sel.monthlyTokenLimit);
+                            }}
+                            className="w-full pl-4 pr-10 py-3 text-sm font-semibold text-[#0F172A] bg-white border border-[#CBD5E1] rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all appearance-none outline-none shadow-sm"
+                          >
+                            {businesses.map(b => (
+                              <option key={b.id} value={b.id}>{b.name}</option>
+                            ))}
+                          </select>
                         <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8] pointer-events-none rotate-90" />
                       </div>
                     </div>
@@ -1507,7 +1521,23 @@ export const AgencyPortal: React.FC = () => {
                         <h4 className="font-extrabold text-[#1E293B] text-lg">{p.name}</h4>
                         <p className="text-xs text-[#64748B]">{p.description}</p>
                       </div>
-                      <span className="text-lg font-extrabold text-[#2563EB]">${p.priceMonthly}<span className="text-xs text-[#64748B] font-normal">/mo</span></span>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="text-lg font-extrabold text-[#2563EB]">${p.priceMonthly}<span className="text-xs text-[#64748B] font-normal">/mo</span></span>
+                        <button
+                          onClick={() => {
+                            setEditingPlan(p);
+                            setEditPlanName(p.name);
+                            setEditPlanPrice(p.priceMonthly);
+                            setEditPlanBranches(p.maxBranches);
+                            setEditPlanTokens(p.monthlyTokens);
+                            setIsPlanModalOpen(true);
+                          }}
+                          className="px-3 py-1.5 text-[10px] font-bold clay-btn-secondary flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Settings className="w-3 h-3" />
+                          <span>Edit</span>
+                        </button>
+                      </div>
                     </div>
 
                     <div className="text-xs space-y-2 pt-2 border-t border-[#DCE3EC] text-[#1E293B] font-semibold">
@@ -1526,6 +1556,86 @@ export const AgencyPortal: React.FC = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* CLIENT SUBSCRIPTION MANAGEMENT SECTION */}
+              <div className="mt-8 pt-8 border-t border-[#DCE3EC]">
+                <div className="mb-6">
+                  <h3 className="text-lg font-extrabold text-[#1E293B]">Client Subscription Management</h3>
+                  <p className="text-xs text-[#64748B]">Upgrade or downgrade a specific client's active SaaS plan</p>
+                </div>
+
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    const targetBizId = subManageBizId || (businesses.length > 0 ? businesses[0].id : '');
+                    const targetPlanId = subManagePlanId || (plans.length > 0 ? plans[0].id : '');
+                    
+                    const biz = businesses.find(b => b.id === targetBizId);
+                    const plan = plans.find(p => p.id === targetPlanId);
+                    
+                    if (!biz || !plan) return;
+
+                    try {
+                      await fetchWithAuth(`/api/businesses/${biz.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          planId: plan.id,
+                          planName: plan.name,
+                          branchLimit: plan.maxBranches,
+                          monthlyTokenLimit: plan.monthlyTokens
+                        }),
+                      });
+                      showToast(`Successfully updated ${biz.name} to ${plan.name}!`);
+                      loadAgencyData();
+                    } catch (err) {
+                      console.error(err);
+                      showToast('Error updating client subscription', 'error');
+                    }
+                  }}
+                  className="bg-[#F8FAFC] p-6 rounded-2xl border border-[#E2E8F0]/80 shadow-inner grid grid-cols-1 md:grid-cols-3 gap-6 items-end"
+                >
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[#1E293B] mb-1">Select Client Business</label>
+                    <div className="relative">
+                      <select
+                        value={subManageBizId || (businesses.length > 0 ? businesses[0].id : '')}
+                        onChange={(e) => setSubManageBizId(e.target.value)}
+                        className="w-full pl-4 pr-10 py-3 text-sm font-semibold text-[#0F172A] bg-white border border-[#CBD5E1] rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all appearance-none outline-none shadow-sm"
+                      >
+                        {businesses.map(b => (
+                          <option key={b.id} value={b.id}>{b.name} (Current: {b.planName})</option>
+                        ))}
+                      </select>
+                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8] pointer-events-none rotate-90" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-[#1E293B] mb-1">Select New SaaS Plan</label>
+                    <div className="relative">
+                      <select
+                        value={subManagePlanId || (plans.length > 0 ? plans[0].id : '')}
+                        onChange={(e) => setSubManagePlanId(e.target.value)}
+                        className="w-full pl-4 pr-10 py-3 text-sm font-semibold text-[#0F172A] bg-white border border-[#CBD5E1] rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all appearance-none outline-none shadow-sm"
+                      >
+                        {plans.map(p => (
+                          <option key={p.id} value={p.id}>{p.name} (${p.priceMonthly}/mo)</option>
+                        ))}
+                      </select>
+                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8] pointer-events-none rotate-90" />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 clay-btn-primary text-sm font-bold flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Update Subscription</span>
+                  </button>
+                </form>
               </div>
             </div>
           )}
@@ -1984,6 +2094,29 @@ export const AgencyPortal: React.FC = () => {
             </div>
           </div>
 
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-[#1E293B] mb-1">Assigned SaaS Plan</label>
+            <select
+              value={planId}
+              onChange={(e) => {
+                const selectedPlanId = e.target.value;
+                setPlanId(selectedPlanId);
+                const selectedPlan = plans.find(p => p.id === selectedPlanId);
+                if (selectedPlan) {
+                  setBranchLimit(selectedPlan.maxBranches);
+                  setMonthlyTokens(selectedPlan.monthlyTokens);
+                }
+              }}
+              className="w-full px-3.5 py-2.5 text-xs clay-input"
+              required
+            >
+              <option value="" disabled>Select a plan...</option>
+              {plans.map(p => (
+                <option key={p.id} value={p.id}>{p.name} (${p.priceMonthly}/mo)</option>
+              ))}
+            </select>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-[#1E293B] mb-1">Branch Limit</label>
@@ -2177,23 +2310,24 @@ export const AgencyPortal: React.FC = () => {
       >
         <form onSubmit={handleSaveAd} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold text-[#1E293B] mb-1">Banner Headline</label>
+            <label className="block text-xs font-bold text-[#1E293B] mb-1">Banner Title</label>
             <input
               type="text"
               required
               value={adTitle}
               onChange={e => setAdTitle(e.target.value)}
+              placeholder="e.g. Upgrade to Enterprise & Get 100k Tokens!"
               className="w-full px-3.5 py-2.5 text-xs clay-input"
             />
           </div>
-
           <div>
-            <label className="block text-xs font-bold text-[#1E293B] mb-1">Banner Description</label>
+            <label className="block text-xs font-bold text-[#1E293B] mb-1">Promotional Message</label>
             <textarea
-              rows={3}
               required
               value={adDesc}
               onChange={e => setAdDesc(e.target.value)}
+              placeholder="Brief description of the offer..."
+              rows={3}
               className="w-full p-3.5 text-xs clay-input"
             />
           </div>
@@ -2234,6 +2368,98 @@ export const AgencyPortal: React.FC = () => {
               className="px-4 py-2.5 clay-btn-primary text-xs cursor-pointer"
             >
               Publish Banner Ad
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* EDIT PLAN MODAL */}
+      <Modal
+        isOpen={isPlanModalOpen}
+        onClose={() => setIsPlanModalOpen(false)}
+        title="Edit SaaS Plan"
+        subtitle="Modify plan limits, pricing, and features. Changes will automatically cascade to all businesses on this plan."
+      >
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!editingPlan) return;
+            try {
+              await fetchWithAuth(`/api/plans/${editingPlan.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  name: editPlanName,
+                  priceMonthly: editPlanPrice,
+                  maxBranches: editPlanBranches,
+                  monthlyTokens: editPlanTokens,
+                }),
+              });
+              showToast(`Successfully updated ${editPlanName} plan!`);
+              setIsPlanModalOpen(false);
+              loadAgencyData();
+            } catch (err) {
+              console.error(err);
+              showToast('Failed to update plan.', 'error');
+            }
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <label className="block text-xs font-bold text-[#1E293B] mb-1">Plan Name</label>
+            <input
+              type="text"
+              required
+              value={editPlanName}
+              onChange={(e) => setEditPlanName(e.target.value)}
+              className="w-full px-3.5 py-2.5 text-xs clay-input"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-[#1E293B] mb-1">Monthly Price ($)</label>
+            <input
+              type="number"
+              required
+              value={editPlanPrice}
+              onChange={(e) => setEditPlanPrice(parseFloat(e.target.value))}
+              className="w-full px-3.5 py-2.5 text-xs clay-input"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[#1E293B] mb-1">Max Branches</label>
+              <input
+                type="number"
+                required
+                value={editPlanBranches}
+                onChange={(e) => setEditPlanBranches(parseInt(e.target.value))}
+                className="w-full px-3.5 py-2.5 text-xs clay-input"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#1E293B] mb-1">Monthly Tokens</label>
+              <input
+                type="number"
+                required
+                value={editPlanTokens}
+                onChange={(e) => setEditPlanTokens(parseInt(e.target.value))}
+                className="w-full px-3.5 py-2.5 text-xs clay-input"
+              />
+            </div>
+          </div>
+          <div className="pt-3 border-t border-[#E8EDF5] flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setIsPlanModalOpen(false)}
+              className="px-5 py-2.5 clay-btn-secondary text-xs font-bold cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-5 py-2.5 clay-btn-primary text-xs font-bold cursor-pointer"
+            >
+              Save Changes
             </button>
           </div>
         </form>

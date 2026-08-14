@@ -33,6 +33,13 @@ export class AuthService {
 
     const user = result.user;
 
+    if (user.businessId) {
+      const business = await db.getBusinessById(user.businessId);
+      if (business && business.status === 'SUSPENDED') {
+        throw new ForbiddenException('Your business account is suspended. Please contact support.');
+      }
+    }
+
     // Do not return password hash to client
     const { password: _, ...sanitizedUser } = user;
 
@@ -43,7 +50,8 @@ export class AuthService {
       businessId: user.businessId,
     };
 
-    const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '24h' });
+    const expiresIn = (process.env.JWT_EXPIRES_IN || '24h') as any;
+    const accessToken = jwt.sign(payload, JWT_SECRET as string, { expiresIn });
 
     return {
       message: 'Authentication successful',

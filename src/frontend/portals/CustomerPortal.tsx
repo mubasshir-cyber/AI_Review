@@ -58,7 +58,13 @@ export const CustomerPortal: React.FC = () => {
             setSelectedBranchId(match.id);
             if (bizRes.data) {
               const matchedBiz = bizRes.data.find((bz: Business) => bz.id === match.businessId);
-              if (matchedBiz) setActiveBusiness(matchedBiz);
+              if (matchedBiz) {
+                setActiveBusiness(matchedBiz);
+                if (matchedBiz.status === 'SUSPENDED') {
+                  setBlockedMessage('This account is suspended!');
+                  setStep('BLOCKED');
+                }
+              }
             }
 
             // Track QR Scan event

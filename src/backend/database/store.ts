@@ -956,18 +956,36 @@ class DatabaseStore {
     if (!plan) return null;
     const updated = { ...plan, ...updates };
 
-    await this.query(
-      `UPDATE plans SET
-        name = $1, price_monthly = $2, price_yearly = $3, max_branches = $4,
-        monthly_tokens = $5, features = $6, is_popular = $7, status = $8
-      WHERE id = $9`,
-      [
-        updated.name, updated.priceMonthly, updated.priceYearly, updated.maxBranches,
-        updated.monthlyTokens, JSON.stringify(updated.features || []), updated.isPopular, updated.status, id
-      ]
-    );
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      
+      await client.query(
+        `UPDATE plans SET
+          name = $1, price_monthly = $2, price_yearly = $3, max_branches = $4,
+          monthly_tokens = $5, features = $6, is_popular = $7, status = $8
+        WHERE id = $9`,
+        [
+          updated.name, updated.priceMonthly, updated.priceYearly, updated.maxBranches,
+          updated.monthlyTokens, JSON.stringify(updated.features || []), updated.isPopular, updated.status, id
+        ]
+      );
 
-    return updated;
+      await client.query(
+        `UPDATE businesses SET
+          plan_name = $1, branch_limit = $2, monthly_token_limit = $3
+        WHERE plan_id = $4`,
+        [updated.name, updated.maxBranches, updated.monthlyTokens, id]
+      );
+
+      await client.query('COMMIT');
+      return updated;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   }
 
   async deletePlan(id: string): Promise<boolean> {

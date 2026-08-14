@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Inject } from '@nestjs/common';
+import { Controller, Get, Param, Inject, Query } from '@nestjs/common';
 import { AnalyticsService } from './analytics.service';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -18,5 +18,14 @@ export class AnalyticsController {
   @Get('business/:id')
   getBusinessStats(@Param('id') id: string, @CurrentUser() user?: any) {
     return this.analyticsService.getBusinessStats(id, user);
+  }
+
+  @Roles('AGENCY_ADMIN', 'BUSINESS_OWNER')
+  @Get('qr-scans')
+  getQrScans(@Query('businessId') businessId: string, @CurrentUser() user?: any) {
+    if (!businessId) {
+      throw new Error('businessId query parameter is required');
+    }
+    return this.analyticsService.getQrScans(businessId, user);
   }
 }
