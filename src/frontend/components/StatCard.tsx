@@ -39,32 +39,35 @@ export const StatCard: React.FC<StatCardProps> = ({
             <Icon className="w-5 h-5" />
           </div>
         </div>
-
-        {badgeText && (
-          <div className="mt-3">
-            <span className={`inline-flex items-center text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${badgeColor}`}>
-              {badgeText}
-            </span>
-          </div>
-        )}
       </div>
 
-      {percentage !== null && (
-        <div className="mt-4 pt-3 border-t border-slate-100">
-          <div className="flex justify-between text-xs font-medium text-slate-600 mb-1">
-            <span>Usage</span>
-            <span>{percentage}% ({progressValue?.toLocaleString()} / {progressMax?.toLocaleString()})</span>
-          </div>
-          <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ${
-                percentage > 90 ? 'bg-rose-500' : 'bg-blue-600'
-              }`}
-              style={{ width: `${percentage}%` }}
-            />
-          </div>
+      {/* Footer: badge left, optional usage/progress right - keeps badge aligned across cards */}
+      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-4">
+        <div className="flex-shrink-0">
+          {badgeText && (
+            <span className={`inline-flex items-center text-[10px] font-semibold px-2.5 py-0.5 rounded-full border ${badgeColor} whitespace-nowrap`}>{badgeText}</span>
+          )}
         </div>
-      )}
+
+        {percentage !== null ? (
+          <div className="flex-1">
+            <div className="flex justify-between text-xs font-medium text-slate-600 mb-1">
+              <span>Usage</span>
+              <span>{percentage}% ({progressValue?.toLocaleString()} / {progressMax?.toLocaleString()})</span>
+            </div>
+            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${
+                  percentage > 90 ? 'bg-rose-500' : 'bg-blue-600'
+                }`}
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="flex-1" />
+        )}
+      </div>
     </div>
   );
 };

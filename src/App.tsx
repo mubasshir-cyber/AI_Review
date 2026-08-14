@@ -1,31 +1,10 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './frontend/context/AuthContext';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './frontend/context/AuthContext';
 import { ToastProvider } from './frontend/context/ToastContext';
 import { Navbar } from './frontend/components/Navbar';
 import { DatabaseStatusBanner } from './frontend/components/DatabaseStatusBanner';
-import { LandingPage } from './frontend/portals/LandingPage';
-import { CustomerPortal } from './frontend/portals/CustomerPortal';
-import { BusinessPortal } from './frontend/portals/BusinessPortal';
-import { AgencyPortal } from './frontend/portals/AgencyPortal';
-import { LoginPage } from './frontend/portals/LoginPage';
-import { ResetPasswordPage } from './frontend/portals/ResetPasswordPage';
-
-const ProtectedRoute: React.FC<{ children: React.ReactNode; allowedRole?: 'AGENCY_ADMIN' | 'BUSINESS_OWNER' }> = ({ children, allowedRole }) => {
-  const { user, isLoadingAuth } = useAuth();
-  
-  if (isLoadingAuth) {
-    return <div className="min-h-[80vh] flex items-center justify-center text-slate-500 text-sm">Authenticating...</div>;
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-  if (allowedRole && user.role !== allowedRole) {
-    return <Navigate to={user.role === 'AGENCY_ADMIN' ? '/agency' : '/business'} replace />;
-  }
-  return <>{children}</>;
-};
+import AppRoutes from './frontend/Routes';
 
 const MainContainer: React.FC = () => {
   return (
@@ -34,33 +13,11 @@ const MainContainer: React.FC = () => {
       <Navbar />
 
       <main className="flex-1 flex flex-col">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/review" element={<CustomerPortal />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/change-password" element={<ResetPasswordPage />} />
-          <Route 
-            path="/agency" 
-            element={
-              <ProtectedRoute allowedRole="AGENCY_ADMIN">
-                <AgencyPortal />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/business" 
-            element={
-              <ProtectedRoute allowedRole="BUSINESS_OWNER">
-                <BusinessPortal />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        <AppRoutes />
       </main>
 
       <footer className="bg-white border-t border-[#DCE3EC] py-6 px-6 text-center text-xs text-[#64748B]">
-        <p>© 2026 Tap Review AI Platform. All rights reserved.</p>
+        <p>© 2026 ReviewScore AI Platform. All rights reserved.</p>
       </footer>
     </div>
   );

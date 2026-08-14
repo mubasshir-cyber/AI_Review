@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Branch } from '../../types';
 import { Sparkles, Plus, Trash2, CheckCircle2, RefreshCw, Building2, Save, Tag, Loader2 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 interface HighlightsStudioProps {
   branches: Branch[];
@@ -23,12 +25,15 @@ const PRESET_SUGGESTIONS = [
 ];
 
 export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, onBranchUpdated }) => {
+  const { fetchWithAuth } = useAuth();
+  const { showToast } = useToast();
   const [selectedBranchId, setSelectedBranchId] = useState<string>(
     branches.length > 0 ? branches[0].id : ''
   );
   const [tags, setTags] = useState<string[]>([]);
   const [newTagInput, setNewTagInput] = useState<string>('');
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isResetting, setIsResetting] = useState<boolean>(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
 
   const selectedBranch = branches.find(b => b.id === selectedBranchId) || branches[0];
@@ -60,9 +65,33 @@ export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, on
     setShowSuccessMessage(false);
   };
 
-  const handleResetDefaults = () => {
-    setTags(['Friendly Staff', 'Gentle Care', 'Clean Environment', 'Painless Treatment', 'Quick Service']);
+  const handleResetDefaults = async () => {
+    if (!selectedBranchId) return;
+    const defaultTags = ['Friendly Staff', 'Gentle Care', 'Clean Environment', 'Painless Treatment', 'Quick Service'];
+    setIsResetting(true);
     setShowSuccessMessage(false);
+    try {
+      const res = await fetchWithAuth(`/api/branches/${selectedBranchId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          highlightTags: defaultTags,
+        }),
+      });
+      const json = await res.json();
+      if (res.ok || json.success) {
+        setTags(defaultTags);
+        onBranchUpdated();
+        showToast('Highlight tags reset to defaults!', 'success');
+      } else {
+        showToast(json.message || 'Failed to reset tags. Please try again.', 'error');
+      }
+    } catch (err) {
+      console.error('Error resetting tags:', err);
+      showToast('Failed to reset tags. Please try again.', 'error');
+    } finally {
+      setIsResetting(false);
+    }
   };
 
   const handleSaveHighlights = async () => {
@@ -125,12 +154,12 @@ export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, on
         </div>
 
         {/* Branch Selector Dropdown */}
-        <div className="flex items-center space-x-2 shrink-0">
-          <label className="text-xs font-bold text-[#1E293B]">Location:</label>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 w-full shrink-0">
+          <label className="text-xs font-bold text-[#1E293B] w-full sm:w-auto">Location:</label>
           <select
             value={selectedBranchId}
             onChange={e => setSelectedBranchId(e.target.value)}
-            className="px-3.5 py-2 text-xs font-bold clay-input cursor-pointer"
+            className="w-full flex-1 px-3.5 py-2 text-xs font-bold clay-input cursor-pointer min-h-[44px]"
           >
             {branches.map(b => (
               <option key={b.id} value={b.id}>
@@ -155,19 +184,10 @@ export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, on
 
       {/* Active Highlights Container */}
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-extrabold text-[#1E293B] uppercase tracking-wider flex items-center space-x-1.5">
-            <Tag className="w-3.5 h-3.5 text-[#2563EB]" />
-            <span>Active Highlights ({tags.length})</span>
-          </h3>
-          <button
-            type="button"
-            onClick={handleResetDefaults}
-            className="text-xs text-[#2563EB] hover:underline flex items-center space-x-1 font-bold cursor-pointer"
-          >
-            <RefreshCw className="w-3 h-3" />
-            <span>Reset Defaults</span>
-          </button>
+        <div className="flex items-center space-x-2">
+          <Tag className="w-3.5 h-3.5 text-[#2563EB]" />
+          <span className="text-xs font-extrabold text-[#1E293B] uppercase tracking-wider">Active Highlights</span>
+          <span className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-[11px] font-bold">{tags.length}</span>
         </div>
 
         <div className="p-4 bg-[#EEF2F7] rounded-2xl border border-[#DCE3EC] min-h-[90px] flex flex-wrap gap-2 items-center shadow-[inset_1px_1px_3px_rgba(255,255,255,0.9)]">
@@ -202,18 +222,18 @@ export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, on
             e.preventDefault();
             handleAddTag(newTagInput);
           }}
-          className="flex space-x-2"
+          className="flex flex-col sm:flex-row gap-2"
         >
           <input
             type="text"
             value={newTagInput}
             onChange={e => setNewTagInput(e.target.value)}
             placeholder="e.g., Painless Treatment, Gentle Care, Clean Facilities"
-            className="flex-1 px-3.5 py-2.5 text-xs clay-input"
+            className="w-full px-3.5 py-2.5 text-xs clay-input min-h-[44px]"
           />
           <button
             type="submit"
-            className="px-4 py-2.5 clay-btn-primary text-xs flex items-center space-x-1.5 cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2.5 clay-btn-primary text-xs flex items-center justify-center space-x-1.5 cursor-pointer min-h-[44px] shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Add Suggestion</span>
@@ -235,13 +255,13 @@ export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, on
                 type="button"
                 disabled={alreadyAdded}
                 onClick={() => handleAddTag(preset)}
-                className={`px-3 py-1 text-xs font-bold rounded-xl border transition-colors cursor-pointer ${
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl border transition-all min-h-[36px] ${
                   alreadyAdded
-                    ? 'bg-[#EEF2F7] text-[#64748B] border-[#DCE3EC] cursor-not-allowed opacity-60'
-                    : 'bg-white text-[#1E293B] border-[#DCE3EC] hover:bg-[#2563EB] hover:text-white hover:border-[#1D4ED8]'
+                    ? 'bg-green-50 text-green-700 border-green-200 cursor-not-allowed select-none'
+                    : 'bg-white text-[#1E293B] border-[#DCE3EC] hover:bg-[#2563EB] hover:text-white hover:border-[#1D4ED8] cursor-pointer shadow-2xs'
                 }`}
               >
-                {alreadyAdded ? 'Added' : `+ ${preset}`}
+                {alreadyAdded ? `✓ Added · ${preset}` : `+ ${preset}`}
               </button>
             );
           })}
@@ -249,28 +269,48 @@ export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, on
       </div>
 
       {/* Save Action Bar */}
-      <div className="pt-4 border-t border-[#E8EDF5] flex items-center justify-between">
+      <div className="pt-4 border-t border-[#E8EDF5] space-y-3">
         <div className="text-[11px] text-[#64748B] font-bold">
           Branch ID: <span className="font-mono text-[#1E293B]">{selectedBranch?.id}</span>
         </div>
-        <button
-          type="button"
-          onClick={handleSaveHighlights}
-          disabled={isSaving}
-          className="px-5 py-2.5 clay-btn-primary text-xs flex items-center space-x-2 disabled:opacity-50 cursor-pointer"
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin text-white" />
-              <span>Saving to Database...</span>
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" />
-              <span>Save Highlights & Update Customer Portal</span>
-            </>
-          )}
-        </button>
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-2">
+          <button
+            type="button"
+            onClick={handleResetDefaults}
+            disabled={isResetting || isSaving}
+            className="w-full sm:w-auto px-4 py-2.5 bg-[#EEF2F7] text-[#1E293B] border border-[#DCE3EC] hover:bg-[#E2E8F0] text-xs font-bold rounded-xl flex items-center justify-center space-x-1.5 disabled:opacity-50 cursor-pointer min-h-[44px] transition-colors"
+          >
+            {isResetting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Resetting...</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                <span>Reset Defaults</span>
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveHighlights}
+            disabled={isSaving || isResetting}
+            className="w-full sm:w-auto px-5 py-2.5 clay-btn-primary text-xs flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer min-h-[44px]"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+                <span>Saving to Database...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>Save Highlights & Update Customer Portal</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );

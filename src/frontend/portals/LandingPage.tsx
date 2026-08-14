@@ -42,7 +42,7 @@ export const LandingPage: React.FC = () => {
   }, []);
 
   const getWhatsappUrl = (plan: Plan) => {
-    const text = `Hello! I am interested in purchasing the *${plan.name}* plan ($${plan.priceMonthly}/mo) for Tap Review AI. Features: Up to ${plan.maxBranches} branches & ${plan.monthlyTokens.toLocaleString()} AI tokens. Please share onboarding details!`;
+    const text = `Hello! I am interested in purchasing the *${plan.name}* plan ($${plan.priceMonthly}/mo) for ReviewScore AI. Features: Up to ${plan.maxBranches} branches & ${plan.monthlyTokens.toLocaleString()} AI tokens. Please share onboarding details!`;
     const cleanNumber = whatsappPhone || '15550192834';
     return `https://wa.me/${cleanNumber}?text=${encodeURIComponent(text)}`;
   };
@@ -392,7 +392,7 @@ export const LandingPage: React.FC = () => {
       <section className="py-16 sm:py-20 max-w-4xl mx-auto px-4 sm:px-6">
         <div className="text-center space-y-2 mb-10">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Frequently Asked Questions</h2>
-          <p className="text-xs text-slate-500">Everything you need to know about setting up Tap Review AI.</p>
+          <p className="text-xs text-slate-500">Everything you need to know about setting up ReviewScore AI.</p>
         </div>
 
         <div className="space-y-3">
@@ -402,7 +402,7 @@ export const LandingPage: React.FC = () => {
               a: 'Clicking "Inquire on WhatsApp" opens a direct chat with our support team prefilled with your chosen plan specifications for instant onboarding.'
             },
             {
-              q: 'Does Tap Review AI require customers to download an app?',
+              q: 'Does ReviewScore AI require customers to download an app?',
               a: 'No! Customers simply scan the QR code using their phone camera. The review assistant opens instantly in their browser.'
             },
             {
@@ -441,7 +441,7 @@ export const LandingPage: React.FC = () => {
               <span>Test Live Customer Demo</span>
             </button>
             <a
-              href={`https://wa.me/${whatsappPhone || '15550192834'}?text=${encodeURIComponent('Hi! I want to enquire about setting up Tap Review AI for my business.')}`}
+              href={`https://wa.me/${whatsappPhone || '15550192834'}?text=${encodeURIComponent('Hi! I want to enquire about setting up ReviewScore AI for my business.')}`}
               target="_blank"
               rel="noreferrer"
               className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs rounded-xl border border-slate-700 transition-all cursor-pointer flex items-center space-x-2"

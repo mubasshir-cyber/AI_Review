@@ -145,7 +145,7 @@ export const ProductTourModal: React.FC<ProductTourModalProps> = ({ isOpen, onCl
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Tap Review AI - Product Walkthrough Tour"
+      title="ReviewScore AI - Product Walkthrough Tour"
       subtitle="See how our platform turns customer visits into 5-star Google reviews automatically"
       maxWidth="max-w-2xl"
     >

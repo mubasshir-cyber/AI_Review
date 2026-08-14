@@ -130,6 +130,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
 
   const [config, setConfig] = useState<QrConfig>(PRESET_QR_TEMPLATES[0].config);
   const [currentLogo, setCurrentLogo] = useState<string>(logoUrl || '');
+  const [includeLogo, setIncludeLogo] = useState<boolean>(false);
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [previewMode, setPreviewMode] = useState<'TABLET' | 'MOBILE' | 'PRINT'>('TABLET');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -142,7 +143,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
 
   useEffect(() => {
     generateBaseQR();
-  }, [config, reviewUrl]);
+  }, [config, reviewUrl, includeLogo, currentLogo]);
 
   const generateBaseQR = async () => {
     try {
@@ -171,7 +172,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
         ctx.clearRect(0, 0, size, size);
         ctx.drawImage(qrImg, 0, 0, size, size);
 
-        if (currentLogo && currentLogo.trim() !== '') {
+        if (includeLogo && currentLogo && currentLogo.trim() !== '') {
           const logoImg = new Image();
           logoImg.crossOrigin = 'anonymous';
 
@@ -263,7 +264,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
         badgeReviewCount: config.badgeReviewCount,
         reviewUrl,
         frameStyle: config.frameStyle,
-        logoUrl: currentLogo
+        logoUrl: includeLogo ? currentLogo : ''
       });
     } catch (err) {
       console.error('Print Error:', err);
@@ -288,7 +289,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
         badgeReviewCount: config.badgeReviewCount,
         reviewUrl,
         frameStyle: config.frameStyle,
-        logoUrl: currentLogo
+        logoUrl: includeLogo ? currentLogo : ''
       });
     } catch (err) {
       console.error('Download Standee PNG Error:', err);
@@ -486,25 +487,32 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 items-end">
                 <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">Margin Padding ({config.margin}px)</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="4"
-                    value={config.margin}
-                    onChange={e => setConfig({ ...config, margin: parseInt(e.target.value) })}
-                    className="w-full accent-[#2563EB]"
-                  />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-[#1E293B]">Margin Padding</label>
+                    <span className="text-[10px] font-mono font-bold text-[#2563EB] bg-[#EEF2F7] px-1.5 py-0.5 rounded border border-[#DCE3EC]">
+                      {config.margin}px
+                    </span>
+                  </div>
+                  <div className="h-[38px] flex items-center px-3 clay-input bg-white">
+                    <input
+                      type="range"
+                      min="0"
+                      max="4"
+                      value={config.margin}
+                      onChange={e => setConfig({ ...config, margin: parseInt(e.target.value) })}
+                      className="w-full accent-[#2563EB] cursor-pointer"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">Error Correction Level</label>
+                  <label className="block text-xs font-bold text-[#1E293B] mb-1.5">Error Correction Level</label>
                   <select
                     value={config.errorCorrectionLevel}
                     onChange={e => setConfig({ ...config, errorCorrectionLevel: e.target.value as any })}
-                    className="w-full px-3.5 py-2.5 clay-input text-xs"
+                    className="w-full h-[38px] px-3.5 clay-input text-xs"
                   >
                     <option value="L">Low (7% recovery)</option>
                     <option value="M">Medium (15% recovery)</option>
@@ -519,6 +527,25 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
           {/* TAB 3: CENTER LOGO */}
           {activeTab === 'LOGO' && (
             <div className="space-y-4 max-h-[380px] overflow-y-auto p-1">
+              <div className="flex items-center justify-between w-full flex-wrap gap-2 min-h-[44px] px-3 py-2 clay-card bg-white border border-[#DCE3EC] rounded-2xl">
+                <label className="font-bold text-[#1E293B] text-xs cursor-pointer select-none flex-1 min-w-0">
+                  Include center logo in QR code
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIncludeLogo(!includeLogo)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 cursor-pointer ${
+                    includeLogo ? 'bg-[#2563EB]' : 'bg-[#CBD5E1]'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                      includeLogo ? 'translate-x-5' : 'translate-x-0.5'
+                    }`}
+                  />
+                </button>
+              </div>
+
               <div>
                 <label className="block font-bold text-[#1E293B] mb-1">Company Logo Image</label>
                 <div className="flex items-center space-x-3">
@@ -544,13 +571,13 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 items-end">
                 <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">Logo Box Shape</label>
+                  <label className="block text-xs font-bold text-[#1E293B] mb-1.5">Logo Box Shape</label>
                   <select
                     value={config.logoShape}
                     onChange={e => setConfig({ ...config, logoShape: e.target.value as any })}
-                    className="w-full px-3.5 py-2.5 clay-input text-xs"
+                    className="w-full h-[38px] px-3.5 clay-input text-xs"
                   >
                     <option value="rounded">Smooth Rounded Box</option>
                     <option value="circle">Circular Container</option>
@@ -559,15 +586,22 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                 </div>
 
                 <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">Logo Box Scale ({config.logoSize}%)</label>
-                  <input
-                    type="range"
-                    min="15"
-                    max="30"
-                    value={config.logoSize}
-                    onChange={e => setConfig({ ...config, logoSize: parseInt(e.target.value) })}
-                    className="w-full accent-[#2563EB]"
-                  />
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-[#1E293B]">Logo Box Scale</label>
+                    <span className="text-[10px] font-mono font-bold text-[#2563EB] bg-[#EEF2F7] px-1.5 py-0.5 rounded border border-[#DCE3EC]">
+                      {config.logoSize}%
+                    </span>
+                  </div>
+                  <div className="h-[38px] flex items-center px-3 clay-input bg-white">
+                    <input
+                      type="range"
+                      min="15"
+                      max="30"
+                      value={config.logoSize}
+                      onChange={e => setConfig({ ...config, logoSize: parseInt(e.target.value) })}
+                      className="w-full accent-[#2563EB] cursor-pointer"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -773,43 +807,43 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
               )}
 
               <div className="mt-3 text-[9px] text-[#64748B] font-mono font-bold">
-                Powered by Tap Review AI
+                Powered by ReviewScore AI
               </div>
             </div>
           </div>
 
           {/* Quick Action Buttons */}
-          <div className="w-full flex items-center gap-2 pt-1">
+          <div className="w-full grid grid-cols-2 gap-2 pt-1">
             <button
               onClick={handlePrint}
               disabled={isPrinting || isDownloadingCardPNG || isDownloadingSVG}
-              className="flex-1 py-2.5 px-3 clay-btn-primary text-xs flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-60"
+              className="h-10 px-2.5 clay-btn-primary text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 whitespace-nowrap shadow-xs transition-all hover:scale-[1.01] active:scale-[0.99]"
             >
               {isPrinting ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
-                  <span>Preparing Print...</span>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-white shrink-0" />
+                  <span>Printing...</span>
                 </>
               ) : (
                 <>
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>Print / Save PDF</span>
+                  <Printer className="w-3.5 h-3.5 shrink-0" />
+                  <span>Print PDF</span>
                 </>
               )}
             </button>
             <button
               onClick={handleDownloadCardPNG}
               disabled={isPrinting || isDownloadingCardPNG || isDownloadingSVG}
-              className="flex-1 py-2.5 px-3 clay-btn-secondary text-xs flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-60"
+              className="h-10 px-2.5 clay-btn-secondary text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 whitespace-nowrap shadow-xs transition-all hover:scale-[1.01] active:scale-[0.99]"
             >
               {isDownloadingCardPNG ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1E293B]" />
-                  <span>Generating...</span>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#1E293B] shrink-0" />
+                  <span>Saving...</span>
                 </>
               ) : (
                 <>
-                  <Download className="w-3.5 h-3.5" />
+                  <Download className="w-3.5 h-3.5 text-[#2563EB] shrink-0" />
                   <span>Download Standee</span>
                 </>
               )}

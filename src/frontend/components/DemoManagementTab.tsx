@@ -12,6 +12,8 @@ export const DemoManagementTab: React.FC = () => {
   const [isDemoEnabled, setIsDemoEnabled] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [actionMessage, setActionMessage] = useState<string>('');
+  const [demoReviews, setDemoReviews] = useState<Array<any>>([]);
+  const [privateFeedbacks, setPrivateFeedbacks] = useState<Array<any>>([]);
 
   useEffect(() => {
     fetch('/api/businesses')
@@ -45,6 +47,9 @@ export const DemoManagementTab: React.FC = () => {
       });
       const data = await res.json();
       setActionMessage(data.message || 'Demo data reset successfully!');
+      // Clear client-side previews
+      setDemoReviews([]);
+      setPrivateFeedbacks([]);
     } catch (err: any) {
       setActionMessage('Failed to reset demo data.');
     } finally {
@@ -63,6 +68,15 @@ export const DemoManagementTab: React.FC = () => {
       });
       const data = await res.json();
       setActionMessage(data.message || `Generated ${count} synthetic demo reviews.`);
+      // Append a single 5-star preview per click (do not replace existing previews)
+      const sample = {
+        id: `demo-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+        rating: 5,
+        text: 'Exceptional service and measurable results — highly recommended.',
+        author: sampleAuthor(demoReviews.length),
+        date: new Date().toLocaleDateString(),
+      };
+      setDemoReviews(prev => [...prev, sample]);
     } catch (err: any) {
       setActionMessage('Failed to generate demo reviews.');
     } finally {
@@ -81,11 +95,55 @@ export const DemoManagementTab: React.FC = () => {
       });
       const data = await res.json();
       setActionMessage(data.message || `Generated ${count} synthetic demo feedback items.`);
+      // On first private feedback generation, clear any existing 5★ demo reviews
+      if (demoReviews.length > 0 && privateFeedbacks.length === 0) {
+        setDemoReviews([]);
+      }
+      // Append a single 3-star private feedback preview per click
+      const sample = {
+        id: `pf-${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+        rating: 3,
+        text: generateHumanReview(3),
+        author: sampleAuthor(privateFeedbacks.length + 5),
+        date: new Date().toLocaleDateString(),
+        userNote: ''
+      };
+      setPrivateFeedbacks(prev => [...prev, sample]);
     } catch (err: any) {
       setActionMessage('Failed to generate demo feedback.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const generateHumanReview = (rating: number) => {
+    const templates5 = [
+      'Fantastic experience — will definitely return!',
+      'Professional team and great results. Highly recommend.',
+      'Quick, friendly service and outstanding outcome.'
+    ];
+    const templates3 = [
+      'Decent service but room for improvement.',
+      'Average experience — some hiccups, but okay overall.',
+      'Satisfactory visit; expected a bit more.'
+    ];
+    if (rating >= 5) return templates5[Math.floor(Math.random() * templates5.length)];
+    return templates3[Math.floor(Math.random() * templates3.length)];
+  };
+
+  const sampleAuthor = (i: number) => {
+    const names = ['A. Patel','M. Johnson','S. Lee','R. Kumar','T. Nguyen','L. Garcia','J. Smith'];
+    return names[i % names.length];
+  };
+
+  const handlePrivateNoteChange = (id: string, value: string) => {
+    setPrivateFeedbacks(prev => prev.map(p => p.id === id ? { ...p, userNote: value } : p));
+  };
+
+  const handleSavePrivateNote = (id: string) => {
+    const item = privateFeedbacks.find(p => p.id === id);
+    if (!item) return;
+    setActionMessage('Private feedback saved locally');
   };
 
   return (
@@ -214,6 +272,63 @@ export const DemoManagementTab: React.FC = () => {
                 <span>+3 Private Feedback</span>
               </button>
             </div>
+
+            {/* Generated Demo Previews */}
+            {demoReviews.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <h5 className="text-sm font-bold">Demo Reviews Preview</h5>
+                {demoReviews.map(r => (
+                  <div key={r.id} className="p-3 clay-card bg-white border border-[#E8EDF5] rounded-2xl">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex">
+                          {Array.from({ length: 5 }).map((_, idx) => (
+                            <Star key={idx} className={`w-4 h-4 ${idx < r.rating ? 'fill-[#F59E0B] text-[#F59E0B]' : 'text-[#CBD5E1]'}`} />
+                          ))}
+                        </div>
+                        <div className="text-xs text-[#64748B] font-medium">{r.author} • <span className="font-normal">{r.date}</span></div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-[#1E293B] mt-2">{r.text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Generated Private Feedback Previews */}
+            {privateFeedbacks.length > 0 && (
+              <div className="mt-4 space-y-3">
+                <h5 className="text-sm font-bold">Private Feedback Preview</h5>
+                {privateFeedbacks.map(p => (
+                  <div key={p.id} className="p-3 clay-card bg-white border border-[#E8EDF5] rounded-2xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex mr-3">
+                          {Array.from({ length: 5 }).map((_, idx) => (
+                            <Star key={idx} className={`w-4 h-4 ${idx < p.rating ? 'fill-[#F59E0B] text-[#F59E0B]' : 'text-[#CBD5E1]'}`} />
+                          ))}
+                        </div>
+                        <div className="text-xs text-[#64748B]">{p.author} • {p.date}</div>
+                      </div>
+                    </div>
+                    <p className="text-sm text-[#1E293B] mt-2">{p.text}</p>
+
+                    <div className="mt-3">
+                      <textarea
+                        value={p.userNote}
+                        onChange={e => handlePrivateNoteChange(p.id, e.target.value)}
+                        placeholder="Write private feedback..."
+                        className="w-full p-2 text-xs border border-[#E8EDF5] rounded-md focus:outline-none"
+                        rows={3}
+                      />
+                      <div className="mt-2 flex justify-end">
+                        <button onClick={() => handleSavePrivateNote(p.id)} className="px-3 py-1.5 clay-btn-primary text-xs">Save</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

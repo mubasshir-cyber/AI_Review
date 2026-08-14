@@ -1004,8 +1004,8 @@ class DatabaseStore {
     const res = await this.query('SELECT * FROM system_settings WHERE id = 1');
     if (res.rows.length === 0) {
       return {
-        agencyName: 'Tap Review AI Agency Studio',
-        supportEmail: 'support@tapreview.ai',
+        agencyName: 'ReviewScore AI Agency Studio',
+        supportEmail: 'support@reviewscore.ai',
         googleRedirectDelayMs: 1500,
         minStarForGoogle: 4,
         defaultPrompt: 'Generates authentic local business review based on customer feedback.',
@@ -1253,7 +1253,7 @@ class DatabaseStore {
     const sampleNames = ['Alex Morgan', 'Priya Sharma', 'David Kim', 'Sarah Jenkins', 'Carlos Mendez', 'Elena Rostova'];
     const sampleTags = ['Fast Onboarding', 'High Marketing ROI', 'AI Software Setup', 'Smooth Support'];
     const sampleTexts = [
-      'Tap Review AI completely transformed our customer review collection! We got 45 new 5-star Google reviews in the first week.',
+      'ReviewScore AI completely transformed our customer review collection! We got 45 new 5-star Google reviews in the first week.',
       'Extremely impressed with the AI review generator. Our customers love how effortless it is to leave feedback.',
       'The private feedback gatekeeper saved our clinic from a 1-star review when an appointment was delayed. Solved it privately!',
       'Setting up table tent QR codes was super easy. Highest conversion rate of any review tool we have tried.',

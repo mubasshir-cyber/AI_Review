@@ -133,7 +133,7 @@ export const LoginPage: React.FC = () => {
   const renderTitle = () => {
     if (isResetMode) return 'Set New Password';
     if (isForgotPassword) return 'Forgot Password';
-    return 'Sign In to Tap Review AI';
+    return 'Sign In to ReviewScore AI';
   };
 
   const renderSubtitle = () => {
@@ -145,8 +145,8 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="min-h-[82vh] bg-[#F5F7FB] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center space-y-3">
-        <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#EEF2F7] border border-[#DCE3EC] shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9),2px_2px_6px_rgba(100,116,139,0.08)] mx-auto">
-          {isResetMode ? <KeyRound className="w-7 h-7 text-[#2563EB]" /> : <Sparkles className="w-7 h-7 text-[#2563EB]" />}
+        <div className="flex justify-center pb-1">
+          <img src="/logo-cropped.png" alt="ReviewScore AI" className="h-6 sm:h-[26px] w-auto object-contain" />
         </div>
         <h2 className="text-2xl font-extrabold text-[#1E293B] tracking-tight">
           {renderTitle()}

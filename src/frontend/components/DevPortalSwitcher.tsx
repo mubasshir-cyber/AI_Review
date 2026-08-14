@@ -42,7 +42,7 @@ export const DevPortalSwitcher: React.FC = () => {
       <div className="flex items-center space-x-2">
         <span className="flex items-center space-x-1 px-2.5 py-1 bg-[#2563EB] text-white font-extrabold tracking-wide uppercase text-[10px] rounded-full shadow-[1px_1px_4px_rgba(37,99,235,0.3)]">
           <Sparkles className="w-3 h-3 text-white" />
-          <span>Tap Review AI</span>
+          <span>ReviewScore AI</span>
         </span>
         <span className="hidden sm:inline text-[#64748B]">|</span>
         <span className="text-[#64748B] hidden md:inline">Portal Switcher:</span>

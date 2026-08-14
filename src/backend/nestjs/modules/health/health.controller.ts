@@ -14,7 +14,7 @@ export class HealthController {
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       framework: 'NestJS',
-      service: 'Tap Review AI Core Engine',
+      service: 'ReviewScore AI Core Engine',
       database: isDbConnected ? 'PostgreSQL Connected' : 'database is not connected',
     };
   }

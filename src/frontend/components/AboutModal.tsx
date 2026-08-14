@@ -12,7 +12,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="About Tap Review AI Platform"
+      title="About ReviewScore AI Platform"
       subtitle="Next-Generation AI Reputation Management & Google Review Optimization SaaS"
       maxWidth="max-w-3xl"
     >
@@ -26,7 +26,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           <h3 className="text-lg font-extrabold text-[#1E293B]">Empowering Local Businesses with Authentic Customer Reputation</h3>
           <p className="text-xs text-[#64748B] leading-relaxed">
             We believe happy customers want to support local businesses, but reviewer fatigue and writer's block get in the way.
-            Tap Review AI removes every barrier, delivering a 10-second review experience powered by Google Gemini AI while safeguarding businesses from damaging unfair ratings.
+            ReviewScore AI removes every barrier, delivering a 10-second review experience powered by Google Gemini AI while safeguarding businesses from damaging unfair ratings.
           </p>
         </div>
 

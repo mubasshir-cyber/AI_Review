@@ -13,7 +13,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
   isOpen,
   onClose,
   supportPhone = '+1 555-019-2834',
-  supportEmail = 'support@tapreview.ai'
+  supportEmail = 'support@reviewscore.ai'
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -41,7 +41,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Contact Tap Review AI Team"
+      title="Contact ReviewScore AI Team"
       subtitle="Have questions about agency plans, custom onboarding, or enterprise white-label solutions?"
       maxWidth="max-w-3xl"
     >
