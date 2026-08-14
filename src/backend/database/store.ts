@@ -423,7 +423,7 @@ class DatabaseStore {
     planName: 'Enterprise Agency Plan',
     branchLimit: 50,
     monthlyTokenLimit: 500000,
-  } as const;
+  };
   private readonly AGENCY_DEFAULT_BRANCH = {
     name: 'Agency Headquarters',
     address: '500 Tech Park, Suite 100',
@@ -434,7 +434,7 @@ class DatabaseStore {
     googleReviewUrl: 'https://search.google.com/local/writereview?placeid=ChIJAgencyReviewPlaceId',
     serviceTags: ['AI Software Setup', 'Fast Customer Support', 'High Marketing ROI', 'Smooth Onboarding', '5-Star Service'],
     status: 'ACTIVE' as const,
-  } as const;
+  };
 
   async getAgencyProfile(): Promise<{ business: Business; branch: Branch }> {
     let business = await this.getBusinessById(this.AGENCY_BIZ_ID);
@@ -626,7 +626,7 @@ class DatabaseStore {
   }
 
   async createBusiness(bizData: Partial<Business>): Promise<Business> {
-    const id = `biz-${Date.now()}`;
+    const id = bizData.id || `biz-${Date.now()}`;
     const createdAt = new Date().toISOString();
     const newBiz: Business = {
       id,
@@ -726,7 +726,7 @@ class DatabaseStore {
     return res.rows[0] ? mapBranch(res.rows[0]) : undefined;
   }
 
-  async createBranch(branchData: Omit<Branch, 'id' | 'createdAt' | 'totalReviews' | 'avgRating'>): Promise<Branch> {
+  async createBranch(branchData: Omit<Branch, 'id' | 'createdAt' | 'totalReviews' | 'avgRating'> & { id?: string }): Promise<Branch> {
     const biz = await this.getBusinessById(branchData.businessId);
     if (biz) {
       const existingBranches = await this.getBranches(biz.id);
@@ -735,7 +735,7 @@ class DatabaseStore {
       }
     }
 
-    const id = `branch-${Date.now()}`;
+    const id = branchData.id || `branch-${Date.now()}`;
     const createdAt = new Date().toISOString();
     const newBranch: Branch = {
       ...branchData,
@@ -755,15 +755,15 @@ class DatabaseStore {
         newBranch.id,
         newBranch.businessId,
         newBranch.name,
-        newBranch.address || '123 Main Street',
-        newBranch.city || 'San Francisco',
-        newBranch.state || 'CA',
-        newBranch.zipCode || '94103',
-        newBranch.phone || '+1 800-555-0199',
+        newBranch.address ?? '',
+        newBranch.city ?? '',
+        newBranch.state ?? '',
+        newBranch.zipCode ?? '',
+        newBranch.phone ?? '',
         newBranch.googlePlaceId || null,
-        newBranch.googleReviewUrl || 'https://search.google.com/local/writereview',
+        newBranch.googleReviewUrl ?? '',
         newBranch.qrCodeUrl || null,
-        JSON.stringify(newBranch.serviceTags || ['Friendly Staff', 'Clean Environment']),
+        JSON.stringify(newBranch.serviceTags || []),
         newBranch.totalReviews || 0,
         newBranch.avgRating || 5.0,
         newBranch.status || 'ACTIVE',
@@ -787,13 +787,13 @@ class DatabaseStore {
       WHERE id = $14`,
       [
         updated.name,
-        updated.address || '123 Main Street',
-        updated.city || 'San Francisco',
-        updated.state || 'CA',
-        updated.zipCode || '94103',
-        updated.phone || '+1 800-555-0199',
+        updated.address ?? '',
+        updated.city ?? '',
+        updated.state ?? '',
+        updated.zipCode ?? '',
+        updated.phone ?? '',
         updated.googlePlaceId || null,
-        updated.googleReviewUrl || 'https://search.google.com/local/writereview',
+        updated.googleReviewUrl ?? '',
         updated.qrCodeUrl || null,
         JSON.stringify(updated.serviceTags || []),
         updated.totalReviews || 0,

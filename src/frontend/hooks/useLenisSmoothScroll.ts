@@ -45,7 +45,7 @@ export function useLenisSmoothScroll<T extends HTMLElement = HTMLElement>(
         gestureOrientation: orientation,
         smoothWheel,
         wheelMultiplier,
-        smoothTouch,
+        syncTouch: smoothTouch,
         touchMultiplier,
         infinite: false,
       });

@@ -21,7 +21,7 @@ export const RootSmoothScroll: React.FC<RootSmoothScrollProps> = ({ enabled = tr
         gestureOrientation: 'vertical',
         smoothWheel: true,
         wheelMultiplier: 1,
-        smoothTouch: false,
+        syncTouch: false,
         touchMultiplier: 1.5,
         infinite: false,
       });
