@@ -14,6 +14,7 @@ import {
   ArrowLeft, MapPin, Phone, ExternalLink, QrCode, Star, MessageSquare, Tag, Users, ChevronRight, Play, Loader2, Menu, X
 } from 'lucide-react';
 import { CategorySearchDropdown } from '../components/CategorySearchDropdown';
+import { useLenisSmoothScroll } from '../hooks/useLenisSmoothScroll';
 
 export const AgencyPortal: React.FC = () => {
   const { fetchWithAuth } = useAuth();
@@ -512,11 +513,31 @@ export const AgencyPortal: React.FC = () => {
     return () => { document.body.style.overflow = ''; };
   }, [mobileMenuOpen]);
 
+  const sidebarScrollRef = useLenisSmoothScroll<HTMLDivElement>(true, {
+    duration: 1.05,
+    wheelMultiplier: 0.9,
+    smoothTouch: true,
+    touchMultiplier: 1.2,
+  });
+
+  const mobileDrawerNavScrollRef = useLenisSmoothScroll<HTMLElement>(true, {
+    duration: 1.05,
+    smoothTouch: true,
+    touchMultiplier: 1.3,
+  });
+
+  const mainScrollRef = useLenisSmoothScroll<HTMLElement>(true, {
+    duration: 1.15,
+    wheelMultiplier: 1,
+    smoothTouch: true,
+    touchMultiplier: 1.5,
+  });
+
   return (
-    <div className="flex flex-col md:flex-row min-h-0 bg-[#F5F7FB] font-sans overflow-x-hidden">
+    <div className="flex-1 flex flex-col md:flex-row h-full min-h-0 overflow-hidden overflow-x-hidden bg-[#F5F7FB] font-sans">
 
       {/* ===== MOBILE HEADER BAR (md:hidden) ===== */}
-      <div className="md:hidden relative flex items-center justify-between px-4 py-3 bg-white border-b border-[#DCE3EC] z-40">
+      <div className="md:hidden relative flex items-center justify-between px-4 py-3 bg-white border-b border-[#DCE3EC] z-40 shrink-0">
         <div className="flex items-center space-x-2.5 min-w-0">
           <div className="w-8 h-8 rounded-lg bg-[#2563EB] flex items-center justify-center shrink-0">
             <ShieldCheck className="w-4 h-4 text-white" />
@@ -572,7 +593,8 @@ export const AgencyPortal: React.FC = () => {
             </div>
 
             {/* Drawer Nav */}
-            <nav className="flex-1 overflow-y-auto p-3 space-y-1">
+            <nav ref={mobileDrawerNavScrollRef} className="flex-1 overflow-y-auto overscroll-contain min-h-0">
+              <div className="p-3 space-y-1">
               {sidebarMenuItems.map(tab => {
                 const Icon = tab.icon;
                 const active = activeTab === tab.id && !selectedBusiness;
@@ -591,6 +613,7 @@ export const AgencyPortal: React.FC = () => {
                   </button>
                 );
               })}
+              </div>
             </nav>
 
             {/* Drawer Footer */}
@@ -608,8 +631,9 @@ export const AgencyPortal: React.FC = () => {
       )}
 
       {/* ===== DESKTOP SIDEBAR (hidden on mobile) ===== */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-[#DCE3EC] shrink-0 flex-col justify-between">
-        <div className="p-4 space-y-5">
+      <aside className="hidden md:flex w-64 bg-white border-r border-[#DCE3EC] shrink-0 flex-col justify-between h-full overflow-hidden">
+        <div ref={sidebarScrollRef} className="overflow-y-auto overscroll-contain flex-1 min-h-0">
+          <div className="p-4 space-y-5">
           {/* Agency Admin Profile Badge */}
           <div className="p-2.5 bg-[#EEF2F7] rounded-xl border border-[#DCE3EC] flex items-center space-x-2.5 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
             <div className="w-8 h-8 rounded-lg bg-[#2563EB] flex items-center justify-center shrink-0">
@@ -649,6 +673,7 @@ export const AgencyPortal: React.FC = () => {
               );
             })}
           </nav>
+          </div>
         </div>
 
         {/* Sidebar Footer Action */}
@@ -664,7 +689,8 @@ export const AgencyPortal: React.FC = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 min-w-0 p-4 sm:p-6 md:p-8 space-y-6">
+      <main ref={mainScrollRef} className="flex-1 min-w-0 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
+        <div className="p-4 sm:p-6 md:p-8 space-y-6">
 
       {/* DETAILED BUSINESS HIERARCHY VIEW */}
       {selectedBusiness ? (
@@ -1816,6 +1842,7 @@ export const AgencyPortal: React.FC = () => {
           {activeTab === 'DEMO' && <DemoManagementTab />}
         </>
       )}
+        </div>
       </main>
 
       {/* ONBOARD / EDIT BUSINESS MODAL */}
