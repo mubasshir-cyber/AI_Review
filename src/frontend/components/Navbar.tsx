@@ -91,32 +91,31 @@ export const Navbar: React.FC = () => {
               </button>
             )}
 
-            <div className="flex items-center space-x-2">
-              {user.avatarUrl ? (
+            <div className="flex items-center bg-white border border-slate-200/80 rounded-full p-1 pr-1.5 transition-all hover:border-slate-300 hover:shadow-md shadow-sm">
+              {currentBusiness?.logoUrl || user.avatarUrl ? (
                 <img
-                  src={user.avatarUrl}
+                  src={currentBusiness?.logoUrl || user.avatarUrl}
                   alt={user.name}
-                  className="w-8 h-8 rounded-full object-cover border border-slate-200"
+                  className="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm bg-white"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-slate-900 text-white font-semibold text-xs flex items-center justify-center border border-slate-800">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-extrabold text-xs flex items-center justify-center shadow-inner ring-1 ring-black/10">
                   {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                 </div>
               )}
-              <div className="hidden md:block text-left">
-                <p className="text-xs font-semibold text-slate-900 leading-tight">{user.name}</p>
-                <p className="text-[10px] text-slate-500">{user.email}</p>
+              <div className="hidden md:flex flex-col text-left ml-2.5 mr-3 max-w-[140px] lg:max-w-[180px]">
+                <p className="text-[12px] font-bold text-slate-900 leading-tight truncate" title={user.name}>{user.name}</p>
+                <p className="text-[10px] font-semibold text-slate-500 leading-tight truncate mt-0.5" title={user.email}>{user.email}</p>
               </div>
+              <div className="hidden md:block w-px h-6 bg-slate-200 mr-1.5" />
+              <button
+                onClick={logout}
+                title="Sign Out"
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition-colors ml-auto md:ml-0"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
             </div>
-
-            <button
-              onClick={logout}
-              title="Sign Out"
-              className="px-2 sm:px-2.5 py-1.5 min-h-[38px] hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200/80 hover:border-rose-200 text-xs font-medium rounded-lg transition-all flex items-center space-x-1 cursor-pointer shrink-0"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Sign Out</span>
-            </button>
           </div>
         ) : (
           <Link

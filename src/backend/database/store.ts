@@ -62,6 +62,11 @@ function mapBusiness(row: any): Business {
     ownerName: row.owner_name,
     ownerEmail: row.owner_email,
     logoUrl: row.logo_url || undefined,
+    phone: row.phone || undefined,
+    address: row.address || undefined,
+    website: row.website || undefined,
+    description: row.description || undefined,
+    workingHours: row.working_hours || undefined,
     category: row.category,
     planId: row.plan_id,
     planName: row.plan_name,
@@ -413,49 +418,18 @@ class DatabaseStore {
   // ==========================================
   private readonly AGENCY_BIZ_ID = 'biz-agency';
   private readonly AGENCY_BRANCH_ID = 'branch-agency-main';
-  private readonly AGENCY_DEFAULT_BUSINESS = {
-    name: 'ReviewScore AI Agency',
-    ownerId: 'user-admin-1',
-    ownerName: 'Agency Super Admin',
-    ownerEmail: 'admin@agency.com',
-    category: 'SaaS & Digital Marketing Agency',
-    planId: 'plan-enterprise',
-    planName: 'Enterprise Agency Plan',
-    branchLimit: 50,
-    monthlyTokenLimit: 500000,
-  };
-  private readonly AGENCY_DEFAULT_BRANCH = {
-    name: 'Agency Headquarters',
-    address: '500 Tech Park, Suite 100',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    zipCode: '400051',
-    phone: '+91 99000 88776',
-    googleReviewUrl: 'https://search.google.com/local/writereview?placeid=ChIJAgencyReviewPlaceId',
-    serviceTags: ['AI Software Setup', 'Fast Customer Support', 'High Marketing ROI', 'Smooth Onboarding', '5-Star Service'],
-    status: 'ACTIVE' as const,
-  };
 
   async getAgencyProfile(): Promise<{ business: Business; branch: Branch }> {
     let business = await this.getBusinessById(this.AGENCY_BIZ_ID);
     if (!business) {
-      business = await this.createBusiness({
-        id: this.AGENCY_BIZ_ID,
-        ...this.AGENCY_DEFAULT_BUSINESS,
-        status: 'ACTIVE',
-        tokensUsedThisMonth: 0,
-      });
+      throw new Error('Agency Business not found in database.');
     }
 
     let branches = await this.getBranches(this.AGENCY_BIZ_ID);
     let branch: Branch | undefined = branches.find(b => b.id === this.AGENCY_BRANCH_ID) || branches[0];
 
     if (!branch) {
-      branch = await this.createBranch({
-        id: this.AGENCY_BRANCH_ID,
-        businessId: this.AGENCY_BIZ_ID,
-        ...this.AGENCY_DEFAULT_BRANCH,
-      });
+      throw new Error('Agency Branch not found in database.');
     }
 
     // Also keep system_settings.agencyName in sync for sidebar badges
@@ -556,6 +530,11 @@ class DatabaseStore {
         ownerName: params.ownerName,
         ownerEmail: cleanEmail,
         logoUrl: params.logoUrl || undefined,
+        phone: undefined,
+        address: undefined,
+        website: undefined,
+        description: undefined,
+        workingHours: undefined,
         category: params.category || 'General Service',
         planId: params.planId || 'plan-pro',
         planName: params.planId === 'plan-enterprise' ? 'Enterprise Plan' : 'Professional Plan',
@@ -568,11 +547,12 @@ class DatabaseStore {
 
       await client.query(
         `INSERT INTO businesses (
-          id, name, owner_id, owner_name, owner_email, logo_url, category,
+          id, name, owner_id, owner_name, owner_email, logo_url, phone, address, website, description, working_hours, category,
           plan_id, plan_name, branch_limit, monthly_token_limit, tokens_used_this_month, status, created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
         [
           newBiz.id, newBiz.name, newBiz.ownerId, newBiz.ownerName, newBiz.ownerEmail, newBiz.logoUrl || null,
+          newBiz.phone || null, newBiz.address || null, newBiz.website || null, newBiz.description || null, newBiz.workingHours || null,
           newBiz.category, newBiz.planId, newBiz.planName, newBiz.branchLimit, newBiz.monthlyTokenLimit,
           newBiz.tokensUsedThisMonth, newBiz.status, newBiz.createdAt
         ]
@@ -635,6 +615,11 @@ class DatabaseStore {
       ownerName: bizData.ownerName || 'Business Owner',
       ownerEmail: bizData.ownerEmail || 'owner@example.com',
       logoUrl: bizData.logoUrl || undefined,
+      phone: bizData.phone || undefined,
+      address: bizData.address || undefined,
+      website: bizData.website || undefined,
+      description: bizData.description || undefined,
+      workingHours: bizData.workingHours || undefined,
       category: bizData.category || 'General Service',
       planId: bizData.planId || 'plan-pro',
       planName: bizData.planName || 'Professional Plan',
@@ -647,11 +632,12 @@ class DatabaseStore {
 
     await this.query(
       `INSERT INTO businesses (
-        id, name, owner_id, owner_name, owner_email, logo_url, category,
+        id, name, owner_id, owner_name, owner_email, logo_url, phone, address, website, description, working_hours, category,
         plan_id, plan_name, branch_limit, monthly_token_limit, tokens_used_this_month, status, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
       [
         newBiz.id, newBiz.name, newBiz.ownerId, newBiz.ownerName, newBiz.ownerEmail, newBiz.logoUrl || null,
+        newBiz.phone || null, newBiz.address || null, newBiz.website || null, newBiz.description || null, newBiz.workingHours || null,
         newBiz.category, newBiz.planId, newBiz.planName, newBiz.branchLimit, newBiz.monthlyTokenLimit,
         newBiz.tokensUsedThisMonth, newBiz.status, newBiz.createdAt
       ]
@@ -677,14 +663,14 @@ class DatabaseStore {
     const updated = { ...current, ...updates };
     await this.query(
       `UPDATE businesses SET
-        name = $1, owner_name = $2, owner_email = $3, logo_url = $4, category = $5,
-        plan_id = $6, plan_name = $7, branch_limit = $8, monthly_token_limit = $9,
-        tokens_used_this_month = $10, status = $11
-      WHERE id = $12`,
+        name = $1, owner_name = $2, owner_email = $3, logo_url = $4, phone = $5, address = $6, website = $7, description = $8, working_hours = $9, category = $10,
+        plan_id = $11, plan_name = $12, branch_limit = $13, monthly_token_limit = $14,
+        tokens_used_this_month = $15, status = $16
+      WHERE id = $17`,
       [
-        updated.name, updated.ownerName, updated.ownerEmail, updated.logoUrl || null,
-        updated.category, updated.planId, updated.planName, updated.branchLimit,
-        updated.monthlyTokenLimit, updated.tokensUsedThisMonth, updated.status, id
+        updated.name, updated.ownerName, updated.ownerEmail, updated.logoUrl || null, updated.phone || null, updated.address || null, updated.website || null, updated.description || null, updated.workingHours || null, updated.category,
+        updated.planId, updated.planName, updated.branchLimit, updated.monthlyTokenLimit,
+        updated.tokensUsedThisMonth, updated.status, id
       ]
     );
     return updated;

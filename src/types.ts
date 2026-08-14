@@ -20,6 +20,11 @@ export interface Business {
   ownerName: string;
   ownerEmail: string;
   logoUrl?: string;
+  phone?: string;
+  address?: string;
+  website?: string;
+  description?: string;
+  workingHours?: string;
   category: string;
   planId: string;
   planName: string;

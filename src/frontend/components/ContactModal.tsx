@@ -88,7 +88,9 @@ export const ContactModal: React.FC<ContactModalProps> = ({
               <div>
                 <label className="block font-bold text-[#1E293B] mb-1">Phone Number</label>
                 <input
-                  type="text"
+                  type="tel"
+                  pattern="^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"
+                  title="Please enter a valid phone number (e.g., +1 (555) 000-1122)"
                   value={formData.phone}
                   onChange={e => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="+1 (555) 000-0000"

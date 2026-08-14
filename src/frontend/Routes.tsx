@@ -23,6 +23,7 @@ export const AppRoutes: React.FC = () => {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/review" element={<CustomerPortal />} />
+      <Route path="/review/:branchId" element={<CustomerPortal />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/change-password" element={<ResetPasswordPage />} />
 

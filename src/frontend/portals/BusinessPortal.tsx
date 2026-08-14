@@ -487,18 +487,20 @@ export const BusinessPortal: React.FC = () => {
         </div>
 
         {/* Sidebar Footer Quick Action */}
-        <div className="p-4 border-t border-[#DCE3EC] bg-[#F5F7FB]">
-          <button
-            onClick={() => {
-              handleOpenBranchModal();
-              setMobileMenuOpen(false);
-            }}
-            className="w-full py-2.5 clay-btn-primary text-xs flex items-center justify-center space-x-1.5 cursor-pointer"
-          >
-            <Plus className="w-4 h-4 text-white" />
-            <span>Add Branch Location</span>
-          </button>
-        </div>
+        {branches.length < (stats?.branchLimit || 5) && (
+          <div className="p-4 border-t border-[#DCE3EC] bg-[#F5F7FB]">
+            <button
+              onClick={() => {
+                handleOpenBranchModal();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full py-2.5 clay-btn-primary text-xs flex items-center justify-center space-x-1.5 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 text-white" />
+              <span>Add Branch Location</span>
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* Main Content Area */}
@@ -525,13 +527,15 @@ export const BusinessPortal: React.FC = () => {
                   <Building2 className="w-3.5 h-3.5 text-[#2563EB]" />
                   <span>Edit Profile</span>
                 </button>
-                <button
-                  onClick={() => handleOpenBranchModal()}
-                  className="px-3.5 py-2 clay-btn-primary text-xs flex items-center space-x-1.5 cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5 text-white" />
-                  <span>Add Branch</span>
-                </button>
+                {branches.length < (stats?.branchLimit || 5) && (
+                  <button
+                    onClick={() => handleOpenBranchModal()}
+                    className="px-3.5 py-2 clay-btn-primary text-xs flex items-center space-x-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-white" />
+                    <span>Add Branch</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -821,7 +825,9 @@ export const BusinessPortal: React.FC = () => {
                 <div>
                   <label className="block text-xs font-bold text-[#1E293B] mb-1">Primary Phone Number</label>
                   <input
-                    type="text"
+                    type="tel"
+                    pattern="^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"
+                    title="Please enter a valid phone number (e.g., +1 (555) 000-1122)"
                     value={profilePhone}
                     onChange={e => setProfilePhone(e.target.value)}
                     placeholder="+1 (555) 000-1122"
@@ -901,13 +907,15 @@ export const BusinessPortal: React.FC = () => {
                 <h3 className="text-lg font-extrabold text-[#1E293B]">Branch Locations ({branches.length} / {stats?.branchLimit || 5})</h3>
                 <p className="text-xs text-[#64748B]">Manage Google Review links and generate custom QR code tabletop standees</p>
               </div>
-              <button
-                onClick={() => handleOpenBranchModal()}
-                className="px-4 py-2.5 clay-btn-primary text-xs flex items-center space-x-1.5 shrink-0 cursor-pointer"
-              >
-                <Plus className="w-4 h-4 text-white" />
-                <span>Add New Location</span>
-              </button>
+              {branches.length < (stats?.branchLimit || 5) && (
+                <button
+                  onClick={() => handleOpenBranchModal()}
+                  className="px-4 py-2.5 clay-btn-primary text-xs flex items-center space-x-1.5 shrink-0 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 text-white" />
+                  <span>Add New Location</span>
+                </button>
+              )}
             </div>
 
             {isLoadingData ? (
@@ -1435,7 +1443,9 @@ export const BusinessPortal: React.FC = () => {
             <div>
               <label className="block text-xs font-bold text-[#1E293B] mb-1">Phone <span className="text-[#EF4444]">*</span></label>
               <input
-                type="text"
+                type="tel"
+                pattern="^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"
+                title="Please enter a valid phone number (e.g., +1 (555) 000-1122)"
                 required
                 value={phone}
                 onChange={e => setPhone(e.target.value)}

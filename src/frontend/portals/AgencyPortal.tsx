@@ -1273,82 +1273,99 @@ export const AgencyPortal: React.FC = () => {
 
           {/* TAB 2: BUSINESSES MASTER & TOKEN ALLOCATION */}
           {activeTab === 'BUSINESSES' && (
-            <div className="space-y-6">
+            <div className="space-y-8 animate-in fade-in duration-500">
               {/* Quick Token Allocation Card */}
-              <div className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-4">
-                <div className="flex items-center space-x-2 text-[#1E293B] font-extrabold text-sm">
-                  <Sparkles className="w-5 h-5 text-[#2563EB]" />
-                  <h4>AI Token Allocation (Set Monthly Gemini AI Token Limits)</h4>
+              <div className="relative bg-white p-6 sm:p-8 rounded-3xl border border-[#E2E8F0] shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+                {/* Decorative background element */}
+                <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+                
+                <div className="relative z-10 flex flex-col space-y-6">
+                  <div>
+                    <div className="flex items-center space-x-3 text-[#0F172A] font-black text-lg sm:text-xl tracking-tight">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                        <Sparkles className="w-5 h-5 text-white" />
+                      </div>
+                      <h4>AI Token Allocation Setup</h4>
+                    </div>
+                    <p className="text-sm text-[#64748B] mt-2 font-medium">Allocate monthly Gemini AI token limits seamlessly to your client accounts.</p>
+                  </div>
+
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const target = businesses.find(b => b.id === planId) || businesses[0];
+                      if (!target) return;
+                      try {
+                        await fetchWithAuth(`/api/businesses/${target.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ monthlyTokenLimit: monthlyTokens }),
+                        });
+                        showToast(`Successfully allocated ${monthlyTokens.toLocaleString()} tokens to ${target.name}!`);
+                        loadAgencyData();
+                      } catch (err) {
+                        console.error(err);
+                        showToast('Error saving token allocation', 'error');
+                      }
+                    }}
+                    className="grid grid-cols-1 md:grid-cols-3 gap-5 items-end bg-[#F8FAFC] p-5 rounded-2xl border border-[#E2E8F0]/80 shadow-inner"
+                  >
+                    <div className="space-y-2">
+                      <label className="block text-[13px] font-bold text-[#334155] uppercase tracking-wide">Select Business</label>
+                      <div className="relative">
+                        <select
+                          value={planId}
+                          onChange={(e) => {
+                            setPlanId(e.target.value);
+                            const sel = businesses.find(b => b.id === e.target.value);
+                            if (sel) setMonthlyTokens(sel.monthlyTokenLimit);
+                          }}
+                          className="w-full pl-4 pr-10 py-3 text-sm font-semibold text-[#0F172A] bg-white border border-[#CBD5E1] rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all appearance-none outline-none shadow-sm"
+                        >
+                          {businesses.map(b => (
+                            <option key={b.id} value={b.id}>{b.name}</option>
+                          ))}
+                        </select>
+                        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8] pointer-events-none rotate-90" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="block text-[13px] font-bold text-[#334155] uppercase tracking-wide">Monthly Token Limit</label>
+                      <input
+                        type="number"
+                        step="1000"
+                        value={monthlyTokens}
+                        onChange={e => setMonthlyTokens(parseInt(e.target.value) || 0)}
+                        placeholder="100,000"
+                        className="w-full px-4 py-3 text-sm font-bold font-mono text-[#0F172A] bg-white border border-[#CBD5E1] rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none shadow-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <button
+                        type="submit"
+                        className="w-full py-3 px-4 bg-[#0F172A] hover:bg-[#1E293B] text-white text-sm font-bold rounded-xl shadow-lg shadow-slate-900/20 transition-all transform hover:-translate-y-0.5 focus:ring-4 focus:ring-slate-500/30 flex items-center justify-center space-x-2"
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                        <span>Save Allocation</span>
+                      </button>
+                    </div>
+                  </form>
                 </div>
-                <p className="text-xs text-[#64748B]">Allocate monthly AI token limits to each business account.</p>
-
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    const target = businesses.find(b => b.id === planId) || businesses[0];
-                    if (!target) return;
-                    try {
-                      await fetch(`/api/businesses/${target.id}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ monthlyTokenLimit: monthlyTokens }),
-                      });
-                      showToast(`Successfully allocated ${monthlyTokens.toLocaleString()} tokens to ${target.name}!`);
-                      loadAgencyData();
-                    } catch (err) {
-                      console.error(err);
-                    }
-                  }}
-                  className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end bg-[#EEF2F7] p-4 rounded-2xl border border-[#DCE3EC]"
-                >
-                  <div>
-                    <label className="block text-xs font-bold text-[#1E293B] mb-1">Select Business</label>
-                    <select
-                      value={planId}
-                      onChange={(e) => {
-                        setPlanId(e.target.value);
-                        const sel = businesses.find(b => b.id === e.target.value);
-                        if (sel) setMonthlyTokens(sel.monthlyTokenLimit);
-                      }}
-                      className="w-full px-3.5 py-2.5 text-xs clay-input"
-                    >
-                      {businesses.map(b => (
-                        <option key={b.id} value={b.id}>{b.name}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#1E293B] mb-1">Monthly Token Limit</label>
-                    <input
-                      type="number"
-                      step="1000"
-                      value={monthlyTokens}
-                      onChange={e => setMonthlyTokens(parseInt(e.target.value) || 0)}
-                      placeholder="100,000"
-                      className="w-full px-3.5 py-2.5 text-xs clay-input font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <button
-                      type="submit"
-                      className="w-full py-2.5 clay-btn-primary text-xs cursor-pointer"
-                    >
-                      Save Token Allocation
-                    </button>
-                  </div>
-                </form>
               </div>
 
               {/* Master Businesses Cards Grid */}
-              <div className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-4">
-                <div className="flex justify-between items-center">
+              <div className="space-y-5">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
                   <div>
-                    <h3 className="text-lg font-extrabold text-[#1E293B]">Client Businesses Hierarchy List</h3>
-                    <p className="text-xs text-[#64748B]">Click any business card below to open its branches, review history, and QR details.</p>
+                    <h3 className="text-xl font-black text-[#0F172A] tracking-tight">Client Businesses Hierarchy</h3>
+                    <p className="text-sm text-[#64748B] font-medium mt-1">Manage branches, monitor review flows, and control access.</p>
                   </div>
-                  <span className="text-xs text-[#2563EB] font-extrabold bg-[#EEF2F7] px-3 py-1 rounded-full border border-[#DCE3EC]">{businesses.length} Businesses Active</span>
+                  <span className="inline-flex items-center justify-center px-4 py-1.5 text-xs font-black text-blue-700 bg-blue-50 border border-blue-200 rounded-full shadow-sm ring-1 ring-blue-500/10">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 mr-2 animate-pulse" />
+                    {businesses.length} Active Businesses
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1356,91 +1373,114 @@ export const AgencyPortal: React.FC = () => {
                     <div
                       key={b.id}
                       onClick={() => loadBusinessDetails(b)}
-                      className="bg-[#EEF2F7] p-5 rounded-2xl border border-[#DCE3EC] space-y-4 cursor-pointer transition-transform transform hover:-translate-y-1 hover:shadow-lg group"
+                      className="group relative bg-white rounded-3xl border border-[#E2E8F0] overflow-hidden hover:border-blue-300 transition-all duration-300 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(59,130,246,0.12)] cursor-pointer flex flex-col"
                     >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="font-extrabold text-[#1E293B] text-base group-hover:text-[#2563EB] flex items-center space-x-1">
-                            <span>{b.name}</span>
-                            <ChevronRight className="w-4 h-4 text-[#64748B] group-hover:text-[#2563EB]" />
-                          </h4>
-                          <p className="text-xs text-[#64748B]">{b.category}</p>
+                      <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out" />
+                      
+                      <div className="p-6 flex-1 flex flex-col space-y-5">
+                        {/* Header */}
+                        <div className="flex items-start justify-between">
+                          <div className="min-w-0 pr-2">
+                            <h4 className="font-black text-[#0F172A] text-lg truncate group-hover:text-blue-600 transition-colors">
+                              {b.name}
+                            </h4>
+                            <p className="text-[13px] font-semibold text-[#64748B] mt-0.5 tracking-wide">{b.category}</p>
+                          </div>
+                          <span className={`shrink-0 px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border ${
+                            b.status === 'SUSPENDED' 
+                              ? 'bg-rose-50 text-rose-600 border-rose-200'
+                              : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                          }`}>
+                            {b.status}
+                          </span>
                         </div>
-                        <span className="px-2 py-0.5 bg-[#22C55E]/10 text-[#22C55E] rounded-full text-[10px] font-bold">
-                          {b.status}
-                        </span>
-                      </div>
 
-                      <div className="text-xs space-y-1 text-[#64748B] bg-white p-3 rounded-xl border border-[#DCE3EC]">
-                        <p><strong className="text-[#1E293B]">Owner:</strong> {b.ownerName} ({b.ownerEmail})</p>
-                        <p><strong className="text-[#1E293B]">Branch Quota:</strong> {b.branchLimit} Locations</p>
-                        <p><strong className="text-[#1E293B]">Token Quota:</strong> {b.monthlyTokenLimit.toLocaleString()} / mo</p>
-                      </div>
+                        {/* Details Card */}
+                        <div className="bg-[#F8FAFC] rounded-2xl p-4 border border-[#E2E8F0]/80 space-y-3 shadow-inner">
+                          <div className="flex items-start space-x-3">
+                            <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                              <Users className="w-4 h-4 text-slate-500" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Owner Profile</p>
+                              <p className="text-[13px] font-bold text-slate-700 truncate">{b.ownerName}</p>
+                              <p className="text-[11px] font-semibold text-slate-500 truncate">{b.ownerEmail}</p>
+                            </div>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-200/60">
+                            <div>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Locations</p>
+                              <p className="text-[13px] font-bold text-slate-700">{b.branchLimit} Quota</p>
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">AI Tokens/mo</p>
+                              <p className="text-[13px] font-bold text-slate-700 font-mono">{b.monthlyTokenLimit.toLocaleString()}</p>
+                            </div>
+                          </div>
+                        </div>
 
-                      <div className="pt-2 border-t border-[#DCE3EC]">
-                        <div>
+                        {/* Actions */}
+                        <div className="pt-2 flex items-center justify-between gap-3 mt-auto">
                           <button
                             onClick={(e) => { e.stopPropagation(); loadBusinessDetails(b); }}
-                            className="inline-flex items-center flex-nowrap whitespace-nowrap space-x-3 px-4 py-2 bg-white border border-[#DCE3EC] rounded-lg text-[#2563EB] font-semibold text-sm shadow-sm hover:bg-[#F7FBFF]"
+                            className="flex-1 inline-flex items-center justify-center space-x-2 px-4 py-2.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white rounded-xl font-bold text-[13px] transition-colors"
                             aria-label={`View branches for ${b.name}`}
                           >
-                            <Building2 className="w-5 h-5 text-[#2563EB]" />
+                            <Building2 className="w-4 h-4" />
                             <span>View Branches</span>
-                            <ChevronRight className="w-4 h-4 text-[#64748B]" />
                           </button>
 
-                          <div className="mt-3 w-full max-w-xs">
-                            <div className="flex flex-col gap-2">
-                              <button
-                                type="button"
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  const newStatus = b.status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED';
-                                  try {
-                                    const res = await fetchWithAuth(`/api/businesses/${b.id}`, {
-                                      method: 'PUT',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ status: newStatus }),
-                                    });
-                                    if (res.ok) {
-                                      showToast(`Business ${newStatus === 'SUSPENDED' ? 'suspended' : 'activated'} successfully!`);
-                                      loadAgencyData();
-                                    }
-                                  } catch (err) {
-                                    showToast('Error updating status', 'error');
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingBiz(b);
+                                setBizName(b.name);
+                                setBizCategory(b.category || '');
+                                setOwnerName(b.ownerName);
+                                setOwnerEmail(b.ownerEmail);
+                                setOwnerPassword('');
+                                setConfirmPassword('');
+                                setPlanId(b.planId);
+                                setBranchLimit(b.branchLimit);
+                                setMonthlyTokens(b.monthlyTokenLimit);
+                                setIsBizModalOpen(true);
+                              }}
+                              className="w-10 h-10 flex items-center justify-center bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors"
+                              title="Edit Business"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                const newStatus = b.status === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED';
+                                try {
+                                  const res = await fetchWithAuth(`/api/businesses/${b.id}`, {
+                                    method: 'PUT',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ status: newStatus }),
+                                  });
+                                  if (res.ok) {
+                                    showToast(`Business ${newStatus === 'SUSPENDED' ? 'suspended' : 'activated'} successfully!`);
+                                    loadAgencyData();
                                   }
-                                }}
-                                className={`w-full h-9 px-3 flex items-center justify-center text-sm font-semibold rounded-md cursor-pointer transition-colors ${
-                                  b.status === 'SUSPENDED'
-                                    ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
-                                    : 'bg-rose-100 text-rose-800 hover:bg-rose-200'
-                                }`}
-                              >
-                                {b.status === 'SUSPENDED' ? 'Activate' : 'Suspend'}
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingBiz(b);
-                                  setBizName(b.name);
-                                  setBizCategory(b.category || '');
-                                  setOwnerName(b.ownerName);
-                                  setOwnerEmail(b.ownerEmail);
-                                  setOwnerPassword('');
-                                  setConfirmPassword('');
-                                  setPlanId(b.planId);
-                                  setBranchLimit(b.branchLimit);
-                                  setMonthlyTokens(b.monthlyTokenLimit);
-                                  setIsBizModalOpen(true);
-                                }}
-                                className="w-full h-9 px-3 flex items-center justify-center bg-white border border-[#DCE3EC] rounded-md text-[#1E293B] hover:bg-[#F7F9FC] text-sm cursor-pointer space-x-2"
-                              >
-                                <Edit className="w-4 h-4 text-[#1E293B]" />
-                                <span>Edit</span>
-                              </button>
-                            </div>
+                                } catch (err) {
+                                  showToast('Error updating status', 'error');
+                                }
+                              }}
+                              className={`w-10 h-10 flex items-center justify-center rounded-xl border transition-colors ${
+                                b.status === 'SUSPENDED'
+                                  ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-600'
+                                  : 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-600'
+                              }`}
+                              title={b.status === 'SUSPENDED' ? 'Activate' : 'Suspend'}
+                            >
+                              <ShieldCheck className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -1613,7 +1653,9 @@ export const AgencyPortal: React.FC = () => {
                     <div>
                       <label className="block text-xs font-bold text-[#1E293B] mb-1">Phone Number</label>
                       <input
-                        type="text"
+                        type="tel"
+                        pattern="^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"
+                        title="Please enter a valid phone number (e.g., +1 (555) 000-1122)"
                         value={agencyPhone}
                         onChange={e => setAgencyPhone(e.target.value)}
                         placeholder="+91 99000 88776"
@@ -2074,7 +2116,9 @@ export const AgencyPortal: React.FC = () => {
             <div>
               <label className="block text-xs font-bold text-[#1E293B] mb-1">Phone <span className="text-[#EF4444]">*</span></label>
               <input
-                type="text"
+                type="tel"
+                pattern="^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"
+                title="Please enter a valid phone number (e.g., +1 (555) 000-1122)"
                 required
                 value={branchPhone}
                 onChange={e => setBranchPhone(e.target.value)}
