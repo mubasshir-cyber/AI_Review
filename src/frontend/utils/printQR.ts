@@ -337,7 +337,25 @@ export async function downloadCardAsPNG(params: PrintQRCardParams) {
   } = params;
 
   const width = 800;
-  const height = 1050;
+  
+  // Calculate dynamic height to remove empty space
+  const margin = 40;
+  let expectedHeight = margin + 50; // top padding
+  if (logoUrl) {
+    expectedHeight += 60 + 20; // logo space
+  }
+  expectedHeight += 36 + 30; // business badge pill
+  expectedHeight += 35; // title
+  expectedHeight += 30; // subtitle
+  const qrSize = 360;
+  expectedHeight += qrSize + 50; // QR and spacing
+  if (showGoogleBadge) {
+    expectedHeight += 44 + 25; // badge and spacing
+  }
+  expectedHeight += 20; // footer text
+  expectedHeight += margin; // bottom margin
+
+  const height = expectedHeight;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;
@@ -350,7 +368,6 @@ export async function downloadCardAsPNG(params: PrintQRCardParams) {
   ctx.fillRect(0, 0, width, height);
 
   // 2. Card Border Frame
-  const margin = 40;
   const cardW = width - margin * 2;
   const cardH = height - margin * 2;
   const cornerRadius = 32;
@@ -428,7 +445,6 @@ export async function downloadCardAsPNG(params: PrintQRCardParams) {
   currentY += 30;
 
   // 7. QR Code Image
-  const qrSize = 360;
   const qrX = (width - qrSize) / 2;
   const qrY = currentY;
 

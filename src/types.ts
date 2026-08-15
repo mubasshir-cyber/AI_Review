@@ -50,6 +50,7 @@ export interface Branch {
   googleReviewUrl: string;
   qrCodeUrl?: string;
   serviceTags: string[];
+  negativeTags: string[];
   totalReviews: number;
   avgRating: number;
   status: 'ACTIVE' | 'INACTIVE';

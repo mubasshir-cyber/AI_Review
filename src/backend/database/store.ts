@@ -118,6 +118,13 @@ function mapBranch(row: any): Branch {
     try { tags = JSON.parse(row.service_tags); } catch (e) { tags = []; }
   }
 
+  let negTags: string[] = [];
+  if (Array.isArray(row.negative_tags)) {
+    negTags = row.negative_tags;
+  } else if (typeof row.negative_tags === 'string') {
+    try { negTags = JSON.parse(row.negative_tags); } catch (e) { negTags = []; }
+  }
+
   return {
     id: row.id,
     businessId: row.business_id,
@@ -131,6 +138,7 @@ function mapBranch(row: any): Branch {
     googleReviewUrl: row.google_review_url,
     qrCodeUrl: row.qr_code_url || undefined,
     serviceTags: tags,
+    negativeTags: negTags,
     totalReviews: parseInt(row.total_reviews || 0),
     avgRating: parseFloat(row.avg_rating || 5.0),
     status: row.status,
@@ -563,8 +571,8 @@ class DatabaseStore {
       await client.query(
         `INSERT INTO branches (
           id, business_id, name, address, city, state, zip_code, phone,
-          google_place_id, google_review_url, service_tags, total_reviews, avg_rating, status, created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+          google_place_id, google_review_url, service_tags, negative_tags, total_reviews, avg_rating, status, created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
         [
           branchId,
           bizId,
@@ -577,6 +585,7 @@ class DatabaseStore {
           null,
           'https://search.google.com/local/writereview',
           JSON.stringify(['Friendly Staff', 'Clean Environment', 'Fast Service']),
+          JSON.stringify(['Long Wait Time', 'Unclean Environment', 'Expensive']),
           0,
           5.0,
           'ACTIVE',
@@ -734,9 +743,9 @@ class DatabaseStore {
     await this.query(
       `INSERT INTO branches (
         id, business_id, name, address, city, state, zip_code, phone,
-        google_place_id, google_review_url, qr_code_url, service_tags,
+        google_place_id, google_review_url, qr_code_url, service_tags, negative_tags,
         total_reviews, avg_rating, status, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
       [
         newBranch.id,
         newBranch.businessId,
@@ -750,6 +759,7 @@ class DatabaseStore {
         newBranch.googleReviewUrl ?? '',
         newBranch.qrCodeUrl || null,
         JSON.stringify(newBranch.serviceTags || []),
+        JSON.stringify(newBranch.negativeTags || []),
         newBranch.totalReviews || 0,
         newBranch.avgRating || 5.0,
         newBranch.status || 'ACTIVE',
@@ -769,8 +779,8 @@ class DatabaseStore {
       `UPDATE branches SET
         name = $1, address = $2, city = $3, state = $4, zip_code = $5, phone = $6,
         google_place_id = $7, google_review_url = $8, qr_code_url = $9, service_tags = $10,
-        total_reviews = $11, avg_rating = $12, status = $13
-      WHERE id = $14`,
+        negative_tags = $11, total_reviews = $12, avg_rating = $13, status = $14
+      WHERE id = $15`,
       [
         updated.name,
         updated.address ?? '',
@@ -782,6 +792,7 @@ class DatabaseStore {
         updated.googleReviewUrl ?? '',
         updated.qrCodeUrl || null,
         JSON.stringify(updated.serviceTags || []),
+        JSON.stringify(updated.negativeTags || []),
         updated.totalReviews || 0,
         updated.avgRating || 5.0,
         updated.status || 'ACTIVE',

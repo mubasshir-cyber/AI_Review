@@ -23,12 +23,13 @@ export const CustomerPortal: React.FC = () => {
   const [generatedReview, setGeneratedReview] = useState<string>('');
   const [copied, setCopied] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isDirectLink, setIsDirectLink] = useState<boolean>(false);
 
   // Low rating feedback form
   const [feedbackName, setFeedbackName] = useState<string>('');
   const [feedbackEmail, setFeedbackEmail] = useState<string>('');
   const [feedbackPhone, setFeedbackPhone] = useState<string>('');
-  const [feedbackCategory, setFeedbackCategory] = useState<string>('Service Quality');
+  const [feedbackCategory, setFeedbackCategory] = useState<string>('');
   const [feedbackComments, setFeedbackComments] = useState<string>('');
 
   // Fetch all businesses and branches for the demo switcher
@@ -52,6 +53,7 @@ export const CustomerPortal: React.FC = () => {
         }
 
         if (queryBranchId && brRes.data) {
+          setIsDirectLink(true);
           const match = brRes.data.find((b: Branch) => b.id === queryBranchId);
           if (match) {
             setActiveBranch(match);
@@ -264,6 +266,8 @@ export const CustomerPortal: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const actualCategory = feedbackCategory || (activeBranch?.negativeTags && activeBranch.negativeTags.length > 0 ? activeBranch.negativeTags[0] : 'Service Quality');
+
     try {
       await fetch('/api/feedback', {
         method: 'POST',
@@ -273,7 +277,7 @@ export const CustomerPortal: React.FC = () => {
           branchName,
           businessId: activeBusiness?.id || 'biz-smile-dental',
           rating,
-          category: feedbackCategory,
+          category: actualCategory,
           customerName: feedbackName || 'Anonymous Customer',
           customerEmail: feedbackEmail,
           customerPhone: feedbackPhone,
@@ -292,32 +296,34 @@ export const CustomerPortal: React.FC = () => {
     <div className="bg-[#F5F7FB] flex flex-col items-center p-4 sm:p-6 font-sans">
       
       {/* Customer Demo Switcher Banner */}
-      <div className="w-full max-w-lg mb-4 clay-card bg-white p-3 border border-[#DCE3EC] flex items-center justify-between gap-3 text-xs">
-        <div className="flex items-center space-x-2 text-[#1E293B] font-extrabold shrink-0">
-          <Building2 className="w-4 h-4 text-[#2563EB]" />
-          <span>Select Branch:</span>
-        </div>
+      {!isDirectLink && (
+        <div className="w-full max-w-lg mb-4 clay-card bg-white p-3 border border-[#DCE3EC] flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center space-x-2 text-[#1E293B] font-extrabold shrink-0">
+            <Building2 className="w-4 h-4 text-[#2563EB]" />
+            <span>Select Branch:</span>
+          </div>
 
-        <div className="relative flex-1">
-          <select
-            value={activeBranch?.id || ''}
-            onChange={(e) => handleBranchSelect(e.target.value)}
-            className="w-full appearance-none bg-[#EEF2F7] text-[#1E293B] font-bold px-3 py-1.5 pr-8 rounded-xl border border-[#DCE3EC] cursor-pointer text-xs focus:outline-none"
-          >
-            <option value="" disabled>Select a Business Branch to Demo</option>
-            <option value="branch-agency-main">🏢 ReviewScore AI Agency (Demo)</option>
-            {allBranches.filter(b => b.id !== 'branch-agency-main').map(b => {
-              const biz = allBusinesses.find(bz => bz.id === b.businessId);
-              return (
-                <option key={b.id} value={b.id}>
-                  {biz ? `${biz.name} - ${b.name}` : b.name}
-                </option>
-              );
-            })}
-          </select>
-          <ChevronDown className="w-3.5 h-3.5 text-[#64748B] absolute right-2.5 top-2.5 pointer-events-none" />
+          <div className="relative flex-1">
+            <select
+              value={activeBranch?.id || ''}
+              onChange={(e) => handleBranchSelect(e.target.value)}
+              className="w-full appearance-none bg-[#EEF2F7] text-[#1E293B] font-bold px-3 py-1.5 pr-8 rounded-xl border border-[#DCE3EC] cursor-pointer text-xs focus:outline-none"
+            >
+              <option value="" disabled>Select a Business Branch to Demo</option>
+              <option value="branch-agency-main">🏢 ReviewScore AI Agency (Demo)</option>
+              {allBranches.filter(b => b.id !== 'branch-agency-main').map(b => {
+                const biz = allBusinesses.find(bz => bz.id === b.businessId);
+                return (
+                  <option key={b.id} value={b.id}>
+                    {biz ? `${biz.name} - ${b.name}` : b.name}
+                  </option>
+                );
+              })}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-[#64748B] absolute right-2.5 top-2.5 pointer-events-none" />
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="w-full max-w-lg clay-card bg-white overflow-hidden border border-[#DCE3EC]">
         {/* Header Branding with Centered Logo */}
@@ -560,10 +566,9 @@ export const CustomerPortal: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#1E293B] mb-1">Your Name</label>
+                <label className="block text-xs font-bold text-[#1E293B] mb-1">Your Name (Optional)</label>
                 <input
                   type="text"
-                  required
                   value={feedbackName}
                   onChange={e => setFeedbackName(e.target.value)}
                   placeholder="e.g., Jane Smith"
@@ -573,10 +578,9 @@ export const CustomerPortal: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Email</label>
+                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Email (Optional)</label>
                   <input
                     type="email"
-                    required
                     value={feedbackEmail}
                     onChange={e => setFeedbackEmail(e.target.value)}
                     placeholder="jane@example.com"
@@ -589,33 +593,33 @@ export const CustomerPortal: React.FC = () => {
                     type="tel"
                     value={feedbackPhone}
                     onChange={e => setFeedbackPhone(e.target.value)}
-                    placeholder="(555) 000-0000"
+                    placeholder="+91 98765 43210"
                     className="w-full px-3.5 py-2.5 text-xs clay-input"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#1E293B] mb-1">Issue Category</label>
+                <label className="block text-xs font-bold text-[#1E293B] mb-1">Constructive Feedback</label>
                 <select
                   value={feedbackCategory}
                   onChange={e => setFeedbackCategory(e.target.value)}
                   className="w-full px-3.5 py-2.5 text-xs clay-input"
                 >
-                  <option value="Wait Time">Wait Time / Delay</option>
-                  <option value="Service Quality">Service Quality</option>
-                  <option value="Staff Behavior">Staff Behavior</option>
-                  <option value="Billing / Pricing">Billing or Pricing Query</option>
-                  <option value="Cleanliness">Hygiene or Cleanliness</option>
-                  <option value="Other">Other</option>
+                  <option value="" disabled>Select a suggestion keyword...</option>
+                  {(activeBranch?.negativeTags && activeBranch.negativeTags.length > 0 
+                    ? [...activeBranch.negativeTags, 'Other'] 
+                    : ['Wait Time / Delay', 'Service Quality', 'Staff Behavior', 'Billing or Pricing Query', 'Hygiene or Cleanliness', 'Other']
+                  ).map((opt, idx) => (
+                    <option key={idx} value={opt}>{opt}</option>
+                  ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#1E293B] mb-1">Private Comments for Management</label>
+                <label className="block text-xs font-bold text-[#1E293B] mb-1">Private Comments for Management (Optional)</label>
                 <textarea
                   rows={3}
-                  required
                   value={feedbackComments}
                   onChange={e => setFeedbackComments(e.target.value)}
                   placeholder="Please describe what happened so we can address it..."
@@ -643,11 +647,11 @@ export const CustomerPortal: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => { window.location.href = '/'; }}
-                className="w-full mt-3 py-3 px-4 border border-[#E6EEF7] rounded-xl text-[#2563EB] font-extrabold text-xs flex items-center justify-center shadow-[0_6px_20px_rgba(37,99,235,0.06)] hover:bg-[#F7FBFF] transition-colors"
+                onClick={() => setStep('RATING')}
+                className="w-full mt-3 py-3 px-4 border border-[#E6EEF7] rounded-xl text-[#2563EB] font-extrabold text-xs flex items-center justify-center shadow-[0_6px_20px_rgba(37,99,235,0.06)] hover:bg-[#F7FBFF] transition-colors cursor-pointer"
               >
                 <span className="mr-2">←</span>
-                <span>Back to Home</span>
+                <span>Back</span>
               </button>
             </form>
           )}

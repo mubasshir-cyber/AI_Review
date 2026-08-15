@@ -369,6 +369,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
               return (
                 <button
                   key={tab.id}
+                  type="button"
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`flex items-center space-x-1.5 px-3 py-2 rounded-2xl transition-all cursor-pointer whitespace-nowrap ${
                     activeTab === tab.id
@@ -391,6 +392,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                 {templates.map(tmpl => (
                   <button
                     key={tmpl.id}
+                    type="button"
                     onClick={() => handleSelectTemplate(tmpl)}
                     className={`p-3.5 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between clay-card ${
                       selectedTemplateId === tmpl.id
@@ -687,6 +689,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
+                  type="button"
                   onClick={handleDownloadCardPNG}
                   className="py-3 px-4 clay-btn-primary text-xs flex items-center justify-center space-x-2 cursor-pointer"
                 >
@@ -695,6 +698,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                 </button>
 
                 <button
+                  type="button"
                   onClick={handlePrint}
                   className="py-3 px-4 clay-btn-secondary text-xs flex items-center justify-center space-x-2 cursor-pointer"
                 >
@@ -703,6 +707,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleDownloadPNG}
                   className="py-2.5 px-3 clay-btn-secondary text-xs flex items-center justify-center space-x-2 cursor-pointer"
                 >
@@ -711,6 +716,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleDownloadSVG}
                   className="py-2.5 px-3 clay-btn-secondary text-xs flex items-center justify-center space-x-2 cursor-pointer"
                 >
@@ -725,6 +731,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                   <span className="font-mono text-[#2563EB] font-extrabold truncate">{reviewUrl}</span>
                 </div>
                 <button
+                  type="button"
                   onClick={handleCopyLink}
                   className="px-3.5 py-2 clay-btn-secondary text-xs flex items-center space-x-1 shrink-0 cursor-pointer"
                 >
@@ -747,6 +754,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
 
             <div className="flex items-center space-x-1 bg-[#EEF2F7] border border-[#DCE3EC] p-1 rounded-2xl">
               <button
+                type="button"
                 onClick={() => setPreviewMode('TABLET')}
                 className={`p-1.5 text-xs transition-colors rounded-xl border cursor-pointer ${previewMode === 'TABLET' ? 'clay-btn-primary' : 'text-[#64748B] hover:text-[#1E293B]'}`}
                 title="Desktop / Table Tent Preview"
@@ -754,6 +762,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                 <Monitor className="w-3.5 h-3.5" />
               </button>
               <button
+                type="button"
                 onClick={() => setPreviewMode('MOBILE')}
                 className={`p-1.5 text-xs transition-colors rounded-xl border cursor-pointer ${previewMode === 'MOBILE' ? 'clay-btn-primary' : 'text-[#64748B] hover:text-[#1E293B]'}`}
                 title="Mobile Screen Preview"
@@ -761,6 +770,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                 <Smartphone className="w-3.5 h-3.5" />
               </button>
               <button
+                type="button"
                 onClick={() => setPreviewMode('PRINT')}
                 className={`p-1.5 text-xs transition-colors rounded-xl border cursor-pointer ${previewMode === 'PRINT' ? 'clay-btn-primary' : 'text-[#64748B] hover:text-[#1E293B]'}`}
                 title="Print Fold Guidelines"
@@ -815,6 +825,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
           {/* Quick Action Buttons */}
           <div className="w-full grid grid-cols-2 gap-2 pt-1">
             <button
+              type="button"
               onClick={handlePrint}
               disabled={isPrinting || isDownloadingCardPNG || isDownloadingSVG}
               className="h-10 px-2.5 clay-btn-primary text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 whitespace-nowrap shadow-xs transition-all hover:scale-[1.01] active:scale-[0.99]"
@@ -832,6 +843,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
               )}
             </button>
             <button
+              type="button"
               onClick={handleDownloadCardPNG}
               disabled={isPrinting || isDownloadingCardPNG || isDownloadingSVG}
               className="h-10 px-2.5 clay-btn-secondary text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-60 whitespace-nowrap shadow-xs transition-all hover:scale-[1.01] active:scale-[0.99]"

@@ -9,7 +9,9 @@ import { useNavigate } from 'react-router-dom';
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [plans, setPlans] = useState<Plan[]>([]);
-  const [whatsappPhone, setWhatsappPhone] = useState('15550192834');
+  const [email, setEmail] = useState('');
+  const [whatsappPhone, setWhatsappPhone] = useState('919876543210');
+  const [showContact, setShowContact] = useState(false);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
 
   // Interactive Hero Preview state
@@ -43,8 +45,15 @@ export const LandingPage: React.FC = () => {
 
   const getWhatsappUrl = (plan: Plan) => {
     const text = `Hello! I am interested in purchasing the *${plan.name}* plan ($${plan.priceMonthly}/mo) for ReviewScore AI. Features: Up to ${plan.maxBranches} branches & ${plan.monthlyTokens.toLocaleString()} AI tokens. Please share onboarding details!`;
-    const cleanNumber = whatsappPhone || '15550192834';
+    const cleanNumber = whatsappPhone || '919876543210';
     return `https://wa.me/${cleanNumber}?text=${encodeURIComponent(text)}`;
+  };
+
+  const handleContactWhatsApp = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const cleanNumber = whatsappPhone || '919876543210';
+    const message = encodeURIComponent('Hi! I want to enquire about setting up ReviewScore AI for my business.');
+    window.open(`https://wa.me/${cleanNumber}?text=${message}`, '_blank');
   };
 
   const toggleDemoTag = (tag: string) => {
@@ -440,15 +449,13 @@ export const LandingPage: React.FC = () => {
             >
               <span>Test Live Customer Demo</span>
             </button>
-            <a
-              href={`https://wa.me/${whatsappPhone || '15550192834'}?text=${encodeURIComponent('Hi! I want to enquire about setting up ReviewScore AI for my business.')}`}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={handleContactWhatsApp}
               className="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs rounded-xl border border-slate-700 transition-all cursor-pointer flex items-center space-x-2"
             >
               <MessageCircle className="w-4 h-4 text-emerald-400" />
               <span>Contact Team on WhatsApp</span>
-            </a>
+            </button>
           </div>
         </div>
       </section>

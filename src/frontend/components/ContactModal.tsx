@@ -5,15 +5,15 @@ import { Mail, MessageCircle, Send, CheckCircle2, Globe } from 'lucide-react';
 interface ContactModalProps {
   isOpen: boolean;
   onClose: () => void;
-  supportPhone?: string;
   supportEmail?: string;
+  supportPhone?: string;
 }
 
 export const ContactModal: React.FC<ContactModalProps> = ({
   isOpen,
   onClose,
-  supportPhone = '+1 555-019-2834',
-  supportEmail = 'support@reviewscore.ai'
+  supportEmail = 'hello@reviewscore.ai',
+  supportPhone = '+91 98765 43210'
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -35,7 +35,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
     }, 2500);
   };
 
-  const whatsappClean = supportPhone.replace(/[^0-9]/g, '') || '15550192834';
+  const whatsappClean = supportPhone.replace(/[^0-9]/g, '') || '919876543210';
 
   return (
     <Modal
@@ -89,11 +89,12 @@ export const ContactModal: React.FC<ContactModalProps> = ({
                 <label className="block font-bold text-[#1E293B] mb-1">Phone Number</label>
                 <input
                   type="tel"
+                  required
                   pattern="^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"
-                  title="Please enter a valid phone number (e.g., +1 (555) 000-1122)"
+                  title="Please enter a valid phone number (e.g., +91 98765 43210)"
                   value={formData.phone}
                   onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+1 (555) 000-0000"
+                  placeholder="+91 98765 43210"
                   className="w-full px-3.5 py-2.5 clay-input text-xs"
                 />
               </div>

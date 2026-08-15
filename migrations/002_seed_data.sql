@@ -12,15 +12,10 @@ ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, price_monthly = EXCLUDED.pr
 -- 2. Seed Users
 INSERT INTO users (id, email, name, role, business_id, avatar_url)
 VALUES
-('user-admin-1', 'admin@agency.com', 'Agency Super Admin', 'AGENCY_ADMIN', NULL, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200'),
-('user-owner-bright', 'sarah@brightcoaching.com', 'Sarah Jenkins', 'BUSINESS_OWNER', 'biz-bright-coaching', NULL)
+('user-admin-1', 'admin@agency.com', 'Agency Super Admin', 'AGENCY_ADMIN', NULL, 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200')
 ON CONFLICT (id) DO NOTHING;
 
--- 3. Seed Businesses
-INSERT INTO businesses (id, name, owner_id, owner_name, owner_email, logo_url, category, plan_id, plan_name, branch_limit, monthly_token_limit, tokens_used_this_month, status)
-VALUES
-('biz-bright-coaching', 'Bright Coaching Institute', 'user-owner-bright', 'Sarah Jenkins', 'sarah@brightcoaching.com', NULL, 'Education & Tutoring', 'plan-pro', 'Professional Plan', 5, 50000, 18400, 'ACTIVE')
-ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, branch_limit = EXCLUDED.branch_limit;
+-- 3. Seed Businesses (Removed dummy data)
 
 -- 4. Seed Branches (Commented out as there are no branches currently seeded)
 -- INSERT INTO branches (id, business_id, name, address, city, state, zip_code, phone, google_review_url, service_tags, total_reviews, avg_rating, status)

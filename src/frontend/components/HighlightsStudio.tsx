@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Branch } from '../../types';
-import { Sparkles, Plus, Trash2, CheckCircle2, RefreshCw, Building2, Save, Tag, Loader2 } from 'lucide-react';
+import { Sparkles, Plus, Trash2, CheckCircle2, RefreshCw, Building2, Save, Tag, Loader2, ThumbsUp, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
@@ -24,14 +24,33 @@ const PRESET_SUGGESTIONS = [
   'Highly Recommended'
 ];
 
+const PRESET_NEGATIVE_SUGGESTIONS = [
+  'Long Wait Time',
+  'Rude Staff',
+  'Unclean Environment',
+  'Expensive',
+  'Hard to Find',
+  'Rushed Service',
+  'Unprofessional',
+  'Hidden Fees',
+  'Poor Communication'
+];
+
 export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, onBranchUpdated }) => {
   const { fetchWithAuth } = useAuth();
   const { showToast } = useToast();
   const [selectedBranchId, setSelectedBranchId] = useState<string>(
     branches.length > 0 ? branches[0].id : ''
   );
+  
+  // State for Positive Tags
   const [tags, setTags] = useState<string[]>([]);
   const [newTagInput, setNewTagInput] = useState<string>('');
+  
+  // State for Negative Tags
+  const [negativeTags, setNegativeTags] = useState<string[]>([]);
+  const [newNegativeTagInput, setNewNegativeTagInput] = useState<string>('');
+  
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isResetting, setIsResetting] = useState<boolean>(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState<boolean>(false);
@@ -47,10 +66,12 @@ export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, on
   useEffect(() => {
     if (selectedBranch) {
       setTags(selectedBranch.serviceTags || []);
+      setNegativeTags(selectedBranch.negativeTags || []);
       setShowSuccessMessage(false);
     }
   }, [selectedBranchId, branches]);
 
+  // Positive Tags Handlers
   const handleAddTag = (tagToAdd: string) => {
     const trimmed = tagToAdd.trim();
     if (!trimmed) return;
@@ -65,9 +86,25 @@ export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, on
     setShowSuccessMessage(false);
   };
 
+  // Negative Tags Handlers
+  const handleAddNegativeTag = (tagToAdd: string) => {
+    const trimmed = tagToAdd.trim();
+    if (!trimmed) return;
+    if (negativeTags.some(t => t.toLowerCase() === trimmed.toLowerCase())) return;
+    setNegativeTags([...negativeTags, trimmed]);
+    setNewNegativeTagInput('');
+    setShowSuccessMessage(false);
+  };
+
+  const handleRemoveNegativeTag = (indexToRemove: number) => {
+    setNegativeTags(negativeTags.filter((_, idx) => idx !== indexToRemove));
+    setShowSuccessMessage(false);
+  };
+
   const handleResetDefaults = async () => {
     if (!selectedBranchId) return;
     const defaultTags = ['Friendly Staff', 'Gentle Care', 'Clean Environment', 'Painless Treatment', 'Quick Service'];
+    const defaultNegativeTags = ['Long Wait Time', 'Unclean Environment', 'Expensive'];
     setIsResetting(true);
     setShowSuccessMessage(false);
     try {
@@ -76,11 +113,13 @@ export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, on
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           highlightTags: defaultTags,
+          negativeTags: defaultNegativeTags
         }),
       });
       const json = await res.json();
       if (res.ok || json.success) {
         setTags(defaultTags);
+        setNegativeTags(defaultNegativeTags);
         onBranchUpdated();
         showToast('Highlight tags reset to defaults!', 'success');
       } else {
@@ -100,11 +139,12 @@ export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, on
     setShowSuccessMessage(false);
 
     try {
-      const res = await fetch(`/api/branches/${selectedBranch.id}`, {
+      const res = await fetchWithAuth(`/api/branches/${selectedBranch.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           serviceTags: tags,
+          negativeTags: negativeTags
         }),
       });
 
@@ -138,7 +178,7 @@ export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, on
   }
 
   return (
-    <div className="clay-card bg-white border border-[#DCE3EC] p-5 sm:p-8 space-y-6 text-xs text-[#1E293B]">
+    <div className="clay-card bg-white border border-[#DCE3EC] p-5 sm:p-8 space-y-8 text-xs text-[#1E293B]">
       {/* Studio Header */}
       <div className="space-y-5 pb-6 border-b border-[#E8EDF5]">
         <div className="flex items-start justify-between gap-4">
@@ -151,7 +191,7 @@ export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, on
                 Review Suggestions &amp; Highlights Studio
               </h2>
               <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed max-w-2xl">
-                Configure custom highlight tags for your business. Customers see these interactive suggestions on the review generator screen to draft authentic 5-star Google reviews.
+                Configure smart suggestion tags based on customer sentiment. Offer positive highlights for 4 & 5-star experiences, and gather specific constructive feedback when ratings are 3 stars or below.
               </p>
             </div>
           </div>
@@ -199,150 +239,173 @@ export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, on
         </div>
       )}
 
-      {/* Active Highlights Container */}
-      <div className="space-y-3.5">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-7 h-7 rounded-lg bg-[#EEF2F7] flex items-center justify-center border border-[#DCE3EC]">
-              <Tag className="w-3.5 h-3.5 text-[#2563EB]" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* ======================================================== */}
+        {/* COLUMN 1: POSITIVE HIGHLIGHTS (4-5 STARS)                */}
+        {/* ======================================================== */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col space-y-6">
+          <div className="flex items-center space-x-4 pb-5 border-b border-slate-100">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100 shrink-0">
+              <ThumbsUp className="w-5 h-5 text-blue-600" />
             </div>
-            <span className="text-[11px] font-extrabold text-[#1E293B] uppercase tracking-wider">Active Highlights</span>
-            <span className="bg-[#DBEAFE] text-[#1D4ED8] px-2 py-0.5 rounded-full text-[10px] font-extrabold">{tags.length}</span>
-          </div>
-        </div>
-
-        <div className="p-5 rounded-2xl bg-gradient-to-br from-[#F8FAFC] via-[#EEF2F7] to-[#F5F7FB] border border-[#DCE3EC] min-h-[110px] flex flex-wrap gap-2.5 items-start content-start shadow-[inset_0_1px_3px_rgba(255,255,255,0.9),inset_0_-1px_2px_rgba(100,116,139,0.04)]">
-          {tags.length === 0 ? (
-            <div className="flex items-center space-x-2.5 text-[#64748B] w-full p-2">
-              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center border border-dashed border-[#DCE3EC]">
-                <Tag className="w-4 h-4 text-[#94A3B8]" />
-              </div>
-              <div>
-                <p className="font-bold text-[#475569]">No highlights configured yet</p>
-                <p className="text-[11px] leading-relaxed">Add custom tags below or click a quick preset to get started.</p>
-              </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-800 tracking-tight">5-Star Highlights</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">Displayed to happy customers when they rate 4 or 5 stars.</p>
             </div>
-          ) : (
-            tags.map((tag, idx) => (
-              <div
-                key={idx}
-                className="group bg-white text-[#1E293B] font-bold text-xs px-3.5 py-2 rounded-xl border border-[#DCE3EC] flex items-center space-x-2 shadow-[0_1px_3px_rgba(100,116,139,0.05),inset_0_1px_0_rgba(255,255,255,0.9)] hover:border-[#2563EB]/40 hover:shadow-[0_2px_8px_rgba(37,99,235,0.1)] transition-all"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E] shrink-0" />
-                <span>{tag}</span>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveTag(idx)}
-                  className="text-[#94A3B8] hover:text-[#EF4444] p-0.5 rounded-md hover:bg-[#FEE2E2]/40 transition-colors cursor-pointer -mr-1"
-                  title="Remove Tag"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+          </div>
 
-      {/* Add New Tag Input Bar */}
-      <div className="space-y-2.5">
-        <div className="flex items-center space-x-2">
-          <div className="w-7 h-7 rounded-lg bg-[#EEF2F7] flex items-center justify-center border border-[#DCE3EC]">
-            <Plus className="w-3.5 h-3.5 text-[#2563EB]" />
-          </div>
-          <label className="text-[11px] font-extrabold text-[#1E293B] uppercase tracking-wider">Add Custom Highlight Point</label>
-        </div>
-        <form
-          onSubmit={e => {
-            e.preventDefault();
-            handleAddTag(newTagInput);
-          }}
-          className="flex flex-col sm:flex-row gap-2"
-        >
-          <div className="relative flex-1">
-            <input
-              type="text"
-              value={newTagInput}
-              onChange={e => setNewTagInput(e.target.value)}
-              placeholder="e.g., Painless Treatment, Gentle Care, Clean Facilities"
-              className="w-full pl-4 pr-4 py-2.5 text-xs clay-input min-h-[44px] bg-[#F8FAFC]"
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full sm:w-auto px-5 py-2.5 clay-btn-primary text-xs flex items-center justify-center space-x-1.5 cursor-pointer min-h-[44px] shrink-0 font-bold"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Suggestion</span>
-          </button>
-        </form>
-      </div>
+          <div className="flex-1 flex flex-col space-y-5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Active Positive Tags</span>
+              <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-bold shadow-sm border border-blue-100/50">{tags.length}</span>
+            </div>
 
-      {/* Popular Presets Palette */}
-      <div className="space-y-3 pt-5 border-t border-[#E8EDF5]">
-        <div className="flex items-center space-x-2">
-          <div className="w-7 h-7 rounded-lg bg-[#FEF3C7]/50 flex items-center justify-center border border-[#FCD34D]/40">
-            <Sparkles className="w-3.5 h-3.5 text-[#D97706]" />
-          </div>
-          <span className="text-[11px] font-extrabold text-[#1E293B] uppercase tracking-wider">
-            Quick Preset Suggestions
-          </span>
-          <span className="text-[10px] font-bold text-[#64748B] ml-1">· Click to add</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {PRESET_SUGGESTIONS.map(preset => {
-            const alreadyAdded = tags.some(t => t.toLowerCase() === preset.toLowerCase());
-            return (
-              <button
-                key={preset}
-                type="button"
-                disabled={alreadyAdded}
-                onClick={() => handleAddTag(preset)}
-                className={`group px-3.5 py-2 text-xs font-bold rounded-xl border transition-all min-h-[40px] inline-flex items-center space-x-1 ${
-                  alreadyAdded
-                    ? 'bg-[#F0FDF4] text-[#166534] border-[#86EFAC] cursor-not-allowed select-none shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'
-                    : 'bg-white text-[#1E293B] border-[#DCE3EC] hover:bg-gradient-to-br hover:from-[#2563EB] hover:to-[#1D4ED8] hover:text-white hover:border-[#1D4ED8] cursor-pointer shadow-[0_1px_2px_rgba(100,116,139,0.05),inset_0_1px_0_rgba(255,255,255,0.9)] hover:shadow-[0_4px_12px_rgba(37,99,235,0.18)] active:scale-[0.98]'
-                }`}
-              >
-                {alreadyAdded ? (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E]" />
-                    <span>{preset}</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-[#2563EB] group-hover:text-white/90 font-bold">+</span>
-                    <span>{preset}</span>
-                  </>
-                )}
+            <div className="p-4 rounded-xl bg-slate-50/50 border border-slate-200/60 min-h-[140px] flex flex-wrap gap-2.5 items-start content-start shadow-[inset_0_1px_4px_rgba(0,0,0,0.01)]">
+              {tags.length === 0 ? (
+                <div className="flex flex-col items-center justify-center space-y-2 text-slate-400 w-full h-full min-h-[100px]">
+                  <Tag className="w-5 h-5 opacity-50" />
+                  <span className="text-xs font-medium">No positive tags configured yet.</span>
+                </div>
+              ) : (
+                tags.map((tag, idx) => (
+                  <div key={idx} className="group bg-white text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-lg border border-slate-200 flex items-center space-x-2 shadow-sm hover:border-blue-300 hover:shadow transition-all">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>{tag}</span>
+                    <button type="button" onClick={() => handleRemoveTag(idx)} className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1 rounded-md transition-colors ml-1" title="Remove Tag">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <form onSubmit={e => { e.preventDefault(); handleAddTag(newTagInput); }} className="relative flex items-center">
+              <input
+                type="text"
+                value={newTagInput}
+                onChange={e => setNewTagInput(e.target.value)}
+                placeholder="e.g., Painless Treatment"
+                className="w-full pl-4 pr-24 py-3 text-sm font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all shadow-sm"
+              />
+              <button type="submit" className="absolute right-2 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center hover:shadow active:scale-95">
+                <Plus className="w-4 h-4 mr-1.5" /> Add
               </button>
-            );
-          })}
+            </form>
+
+            <div className="pt-5 border-t border-slate-100">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-3">Quick Presets</span>
+              <div className="flex flex-wrap gap-2">
+                {PRESET_SUGGESTIONS.map(preset => {
+                  const alreadyAdded = tags.some(t => t.toLowerCase() === preset.toLowerCase());
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      disabled={alreadyAdded}
+                      onClick={() => handleAddTag(preset)}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
+                        alreadyAdded
+                          ? 'bg-emerald-50/50 text-emerald-600 border-emerald-100 opacity-60 cursor-not-allowed'
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-800 cursor-pointer shadow-sm hover:shadow'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* ======================================================== */}
+        {/* COLUMN 2: CONSTRUCTIVE FEEDBACK (1-3 STARS)              */}
+        {/* ======================================================== */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-[0_2px_12px_rgba(0,0,0,0.03)] flex flex-col space-y-6">
+          <div className="flex items-center space-x-4 pb-5 border-b border-slate-100">
+            <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center border border-orange-100 shrink-0">
+              <AlertTriangle className="w-5 h-5 text-orange-600" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-800 tracking-tight">Constructive Feedback</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">Gathered privately when users rate 3 stars or lower.</p>
+            </div>
+          </div>
+
+          <div className="flex-1 flex flex-col space-y-5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">Active Feedback Tags</span>
+              <span className="bg-orange-50 text-orange-700 px-2.5 py-1 rounded-full text-xs font-bold shadow-sm border border-orange-100/50">{negativeTags.length}</span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-slate-50/50 border border-slate-200/60 min-h-[140px] flex flex-wrap gap-2.5 items-start content-start shadow-[inset_0_1px_4px_rgba(0,0,0,0.01)]">
+              {negativeTags.length === 0 ? (
+                <div className="flex flex-col items-center justify-center space-y-2 text-slate-400 w-full h-full min-h-[100px]">
+                  <Tag className="w-5 h-5 opacity-50" />
+                  <span className="text-xs font-medium">No constructive tags configured yet.</span>
+                </div>
+              ) : (
+                negativeTags.map((tag, idx) => (
+                  <div key={idx} className="group bg-white text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-lg border border-slate-200 flex items-center space-x-2 shadow-sm hover:border-orange-300 hover:shadow transition-all">
+                    <AlertTriangle className="w-4 h-4 text-orange-500 shrink-0" />
+                    <span>{tag}</span>
+                    <button type="button" onClick={() => handleRemoveNegativeTag(idx)} className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1 rounded-md transition-colors ml-1" title="Remove Tag">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <form onSubmit={e => { e.preventDefault(); handleAddNegativeTag(newNegativeTagInput); }} className="relative flex items-center">
+              <input
+                type="text"
+                value={newNegativeTagInput}
+                onChange={e => setNewNegativeTagInput(e.target.value)}
+                placeholder="e.g., Long Wait Time"
+                className="w-full pl-4 pr-24 py-3 text-sm font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 transition-all shadow-sm"
+              />
+              <button type="submit" className="absolute right-2 px-4 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center hover:shadow active:scale-95">
+                <Plus className="w-4 h-4 mr-1.5" /> Add
+              </button>
+            </form>
+
+            <div className="pt-5 border-t border-slate-100">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-3">Quick Presets</span>
+              <div className="flex flex-wrap gap-2">
+                {PRESET_NEGATIVE_SUGGESTIONS.map(preset => {
+                  const alreadyAdded = negativeTags.some(t => t.toLowerCase() === preset.toLowerCase());
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      disabled={alreadyAdded}
+                      onClick={() => handleAddNegativeTag(preset)}
+                      className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-all ${
+                        alreadyAdded
+                          ? 'bg-red-50/50 text-red-600 border-red-100 opacity-60 cursor-not-allowed'
+                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:text-slate-800 cursor-pointer shadow-sm hover:shadow'
+                      }`}
+                    >
+                      {preset}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       {/* Save Action Bar */}
-      <div className="pt-5 mt-2 border-t border-[#E8EDF5] space-y-3">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-[#64748B] font-bold">
-          <div className="flex items-center space-x-1.5">
-            <Building2 className="w-3.5 h-3.5" />
-            <span>Targeting:</span>
-            <span className="font-bold text-[#1E293B] bg-[#EEF2F7] px-2 py-0.5 rounded-lg border border-[#DCE3EC]">
-              {selectedBranch?.name || 'Unknown Branch'}
-            </span>
-          </div>
-          <div className="flex items-center space-x-1.5">
-            <Tag className="w-3.5 h-3.5" />
-            <span>Branch ID:</span>
-            <span className="font-mono text-[#1E293B] bg-white px-2 py-0.5 rounded-lg border border-[#DCE3EC]">{selectedBranch?.id}</span>
-          </div>
-        </div>
-        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 pt-1">
+      <div className="pt-6 mt-4 border-t border-[#E8EDF5] space-y-4">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
           <button
             type="button"
             onClick={handleResetDefaults}
             disabled={isResetting || isSaving}
-            className="w-full sm:w-auto px-4 py-2.5 bg-white text-[#475569] border border-[#DCE3EC] hover:bg-[#F8FAFC] hover:border-[#94A3B8] text-xs font-bold rounded-xl flex items-center justify-center space-x-1.5 disabled:opacity-50 cursor-pointer min-h-[44px] transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]"
+            className="w-full sm:w-auto px-5 py-2.5 bg-white text-[#475569] border border-[#DCE3EC] hover:bg-[#F8FAFC] hover:border-[#94A3B8] text-xs font-bold rounded-xl flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer min-h-[44px] transition-all shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]"
           >
             {isResetting ? (
               <>
@@ -352,20 +415,21 @@ export const HighlightsStudio: React.FC<HighlightsStudioProps> = ({ branches, on
             ) : (
               <>
                 <RefreshCw className="w-4 h-4" />
-                <span>Reset Defaults</span>
+                <span>Reset to Defaults</span>
               </>
             )}
           </button>
+          
           <button
             type="button"
             onClick={handleSaveHighlights}
             disabled={isSaving || isResetting}
-            className="w-full sm:w-auto px-6 py-2.5 clay-btn-primary text-xs flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer min-h-[44px] font-bold shadow-[0_4px_14px_rgba(37,99,235,0.18)] hover:shadow-[0_6px_18px_rgba(37,99,235,0.25)] active:scale-[0.99] transition-all"
+            className="w-full sm:w-auto px-8 py-2.5 clay-btn-primary text-xs flex items-center justify-center space-x-2 disabled:opacity-50 cursor-pointer min-h-[44px] font-bold shadow-[0_4px_14px_rgba(37,99,235,0.18)] hover:shadow-[0_6px_18px_rgba(37,99,235,0.25)] active:scale-[0.99] transition-all"
           >
             {isSaving ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin text-white" />
-                <span>Saving Changes...</span>
+                <span>Saving Configurations...</span>
               </>
             ) : (
               <>

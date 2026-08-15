@@ -1765,7 +1765,7 @@ export const AgencyPortal: React.FC = () => {
                       <input
                         type="tel"
                         pattern="^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"
-                        title="Please enter a valid phone number (e.g., +1 (555) 000-1122)"
+                        title="Please enter a valid phone number (e.g., +91 98765 43210)"
                         value={agencyPhone}
                         onChange={e => setAgencyPhone(e.target.value)}
                         placeholder="+91 99000 88776"
@@ -2251,7 +2251,7 @@ export const AgencyPortal: React.FC = () => {
               <input
                 type="tel"
                 pattern="^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"
-                title="Please enter a valid phone number (e.g., +1 (555) 000-1122)"
+                title="Please enter a valid phone number (e.g., +91 98765 43210)"
                 required
                 value={branchPhone}
                 onChange={e => setBranchPhone(e.target.value)}

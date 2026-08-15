@@ -750,144 +750,212 @@ export const BusinessPortal: React.FC = () => {
 
         {/* TAB 2: BUSINESS PROFILE MANAGEMENT */}
         {activeTab === 'PROFILE' && (
-          <div className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-6">
-            <div>
-              <h2 className="text-xl font-extrabold text-[#1E293B] flex items-center space-x-2">
-                <Building2 className="w-5 h-5 text-[#2563EB]" />
-                <span>Business Profile Management</span>
-              </h2>
-              <p className="text-xs text-[#64748B] mt-1">
-                Update your official business details, working hours, logo, and contact info displayed across customer review pages and tabletop QR stands.
-              </p>
+          <div className="space-y-6 max-w-5xl mx-auto pb-12">
+            {/* Header Section */}
+            <div className="clay-card bg-white p-6 md:p-8 border border-[#DCE3EC] flex flex-col md:flex-row items-start justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-extrabold text-[#1E293B] flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#EEF2F7] flex items-center justify-center border border-[#DCE3EC]">
+                    <Building2 className="w-5 h-5 text-[#2563EB]" />
+                  </div>
+                  <span>Business Profile</span>
+                </h2>
+                <p className="text-sm text-[#64748B] mt-2 max-w-2xl leading-relaxed">
+                  Update your official business details, working hours, logo, and contact info displayed across customer review pages and tabletop QR stands.
+                </p>
+              </div>
             </div>
 
-            <form onSubmit={handleSaveProfile} className="space-y-6">
-              {/* Profile Avatar / Logo Display */}
-              <div className="p-4 bg-[#EEF2F7] rounded-2xl border border-[#DCE3EC] flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
-                <BusinessLogoOrIcon logoUrl={profileLogoUrl} name={profileName} className="w-16 h-16 bg-white text-[#2563EB] border border-[#DCE3EC] rounded-2xl flex items-center justify-center font-extrabold text-xl shrink-0 shadow-[2px_2px_6px_rgba(100,116,139,0.06)]" iconClassName="w-8 h-8 text-[#2563EB]" />
-                <div className="flex-1 space-y-2 w-full">
-                  <label className="block text-xs font-bold text-[#1E293B]">Business Logo Image URL</label>
-                  <input
-                    type="url"
-                    value={profileLogoUrl}
-                    onChange={e => setProfileLogoUrl(e.target.value)}
-                    placeholder="https://example.com/logo.png"
-                    className="w-full px-3.5 py-2.5 text-xs clay-input"
-                  />
-                  <p className="text-[10px] text-[#64748B]">Provide a direct image URL for your business logo. If left blank, a professional business icon is automatically displayed.</p>
+            <form onSubmit={handleSaveProfile} className="space-y-6 relative">
+              
+              {/* Logo / Media Section */}
+              <div className="clay-card bg-white p-6 md:p-8 border border-[#DCE3EC]">
+                <h3 className="text-base font-extrabold text-[#1E293B] mb-5 flex items-center space-x-2">
+                  <span className="w-6 h-6 rounded-md bg-[#EEF2F7] flex items-center justify-center">
+                    <Sparkles className="w-3.5 h-3.5 text-[#2563EB]" />
+                  </span>
+                  <span>Brand Logo & Media</span>
+                </h3>
+                <div className="p-6 bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] flex flex-col md:flex-row items-center space-y-4 md:space-y-0 md:space-x-6">
+                  <BusinessLogoOrIcon logoUrl={profileLogoUrl} name={profileName} className="w-20 h-20 bg-white text-[#2563EB] border border-[#DCE3EC] rounded-2xl flex items-center justify-center font-extrabold text-2xl shrink-0 shadow-sm" iconClassName="w-10 h-10 text-[#2563EB]" />
+                  <div className="flex-1 w-full space-y-2.5">
+                    <label className="block text-sm font-bold text-[#1E293B]">Business Logo Image URL</label>
+                    <input
+                      type="url"
+                      value={profileLogoUrl}
+                      onChange={e => setProfileLogoUrl(e.target.value)}
+                      placeholder="https://example.com/logo.png"
+                      className="w-full px-4 py-3 text-sm clay-input bg-white"
+                    />
+                    <p className="text-xs text-[#64748B]">Provide a direct image URL for your business logo. If left blank, a professional business icon is automatically displayed.</p>
+                  </div>
                 </div>
               </div>
 
-              {/* Main Fields Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Business Name <span className="text-[#EF4444]">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={profileName}
-                    onChange={e => setProfileName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs clay-input"
-                  />
+              {/* Grid of details: Basic Info and Contact */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Basic Information */}
+                <div className="clay-card bg-white p-6 md:p-8 border border-[#DCE3EC] space-y-5">
+                  <h3 className="text-base font-extrabold text-[#1E293B] mb-2 border-b border-[#F1F5F9] pb-4 flex items-center space-x-2">
+                    <span className="w-6 h-6 rounded-md bg-[#EEF2F7] flex items-center justify-center">
+                      <FileText className="w-3.5 h-3.5 text-[#2563EB]" />
+                    </span>
+                    <span>Basic Information</span>
+                  </h3>
+                  
+                  <div>
+                    <label className="block text-sm font-bold text-[#1E293B] mb-1.5">Business Name <span className="text-[#EF4444]">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={profileName}
+                      onChange={e => setProfileName(e.target.value)}
+                      className="w-full px-4 py-3 text-sm clay-input"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-[#1E293B] mb-1.5">Business Category / Industry <span className="text-[#EF4444]">*</span></label>
+                    <div className="relative">
+                      <CategorySearchDropdown
+                        value={profileCategory}
+                        onChange={setProfileCategory}
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-bold text-[#1E293B] mb-1.5">Owner Name <span className="text-[#EF4444]">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={profileOwnerName}
+                      onChange={e => setProfileOwnerName(e.target.value)}
+                      className="w-full px-4 py-3 text-sm clay-input"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Business Category / Industry <span className="text-[#EF4444]">*</span></label>
-                  <CategorySearchDropdown
-                    value={profileCategory}
-                    onChange={setProfileCategory}
-                    required
-                  />
-                </div>
+                {/* Contact & Location */}
+                <div className="clay-card bg-white p-6 md:p-8 border border-[#DCE3EC] space-y-5">
+                  <h3 className="text-base font-extrabold text-[#1E293B] mb-2 border-b border-[#F1F5F9] pb-4 flex items-center space-x-2">
+                    <span className="w-6 h-6 rounded-md bg-[#EEF2F7] flex items-center justify-center">
+                      <Globe className="w-3.5 h-3.5 text-[#2563EB]" />
+                    </span>
+                    <span>Contact & Location</span>
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-sm font-bold text-[#1E293B] mb-1.5">Owner Email <span className="text-[#EF4444]">*</span></label>
+                      <input
+                        type="email"
+                        required
+                        value={profileEmail}
+                        onChange={e => setProfileEmail(e.target.value)}
+                        className="w-full px-4 py-3 text-sm clay-input"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-[#1E293B] mb-1.5">Phone Number</label>
+                      <input
+                        type="tel"
+                        pattern="^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"
+                        title="Please enter a valid phone number (e.g., +91 98765 43210)"
+                        value={profilePhone}
+                        onChange={e => setProfilePhone(e.target.value)}
+                        placeholder="+91 98765 43210"
+                        className="w-full px-4 py-3 text-sm clay-input"
+                      />
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Owner Name <span className="text-[#EF4444]">*</span></label>
-                  <input
-                    type="text"
-                    required
-                    value={profileOwnerName}
-                    onChange={e => setProfileOwnerName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs clay-input"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-bold text-[#1E293B] mb-1.5">Website URL</label>
+                    <input
+                      type="text"
+                      value={profileWebsite}
+                      onChange={e => setProfileWebsite(e.target.value)}
+                      placeholder="www.mybusiness.com"
+                      className="w-full px-4 py-3 text-sm clay-input"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Owner Email Address <span className="text-[#EF4444]">*</span></label>
-                  <input
-                    type="email"
-                    required
-                    value={profileEmail}
-                    onChange={e => setProfileEmail(e.target.value)}
-                    className="w-full px-3.5 py-2.5 text-xs clay-input"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Primary Phone Number</label>
-                  <input
-                    type="tel"
-                    pattern="^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"
-                    title="Please enter a valid phone number (e.g., +1 (555) 000-1122)"
-                    value={profilePhone}
-                    onChange={e => setProfilePhone(e.target.value)}
-                    placeholder="+1 (555) 000-1122"
-                    className="w-full px-3.5 py-2.5 text-xs clay-input"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Website URL</label>
-                  <input
-                    type="url"
-                    value={profileWebsite}
-                    onChange={e => setProfileWebsite(e.target.value)}
-                    placeholder="https://mybusiness.com"
-                    className="w-full px-3.5 py-2.5 text-xs clay-input"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Headquarters / Main Address</label>
-                  <input
-                    type="text"
-                    value={profileAddress}
-                    onChange={e => setProfileAddress(e.target.value)}
-                    placeholder="100 Main Street, Suite 200, San Francisco, CA"
-                    className="w-full px-3.5 py-2.5 text-xs clay-input"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Working Hours</label>
-                  <input
-                    type="text"
-                    value={profileWorkingHours}
-                    onChange={e => setProfileWorkingHours(e.target.value)}
-                    placeholder="Mon - Sat: 9:00 AM - 8:00 PM (Sun: Closed)"
-                    className="w-full px-3.5 py-2.5 text-xs clay-input"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Business Description & AI Context</label>
-                  <textarea
-                    rows={3}
-                    value={profileDescription}
-                    onChange={e => setProfileDescription(e.target.value)}
-                    placeholder="Tell AI about your business background, special services, and core customer promises..."
-                    className="w-full px-3.5 py-2.5 text-xs clay-input"
-                  />
+                  <div>
+                    <label className="block text-sm font-bold text-[#1E293B] mb-1.5">Headquarters / Main Address</label>
+                    <input
+                      type="text"
+                      value={profileAddress}
+                      onChange={e => setProfileAddress(e.target.value)}
+                      placeholder="100 Main Street, Suite 200, San Francisco, CA"
+                      className="w-full px-4 py-3 text-sm clay-input"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-[#E8EDF5] flex justify-end">
+              {/* Additional Information */}
+              <div className="clay-card bg-white p-6 md:p-8 border border-[#DCE3EC] space-y-6">
+                <div className="border-b border-[#F1F5F9] pb-4">
+                  <h3 className="text-base font-extrabold text-[#1E293B] flex items-center space-x-2">
+                     <span className="w-6 h-6 rounded-md bg-[#EEF2F7] flex items-center justify-center">
+                      <Tag className="w-3.5 h-3.5 text-[#2563EB]" />
+                    </span>
+                    <span>Additional Details</span>
+                  </h3>
+                  <p className="text-sm text-[#64748B] mt-2">Extra information that helps configure your AI review assistant and public profile.</p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="md:col-span-2 lg:col-span-1">
+                    <label className="flex items-center text-sm font-bold text-[#1E293B] mb-2 space-x-2">
+                      <Clock className="w-4 h-4 text-[#64748B]" />
+                      <span>Working Hours</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={profileWorkingHours}
+                      onChange={e => setProfileWorkingHours(e.target.value)}
+                      placeholder="Mon - Sat: 9:00 AM - 8:00 PM (Sun: Closed)"
+                      className="w-full px-4 py-3 text-sm clay-input"
+                    />
+                    <p className="text-xs text-[#64748B] mt-2">Display your standard operating hours for customers.</p>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="flex items-center text-sm font-bold text-[#1E293B] mb-2 space-x-2">
+                      <Sparkle className="w-4 h-4 text-[#64748B]" />
+                      <span>Business Description & AI Context</span>
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={profileDescription}
+                      onChange={e => setProfileDescription(e.target.value)}
+                      placeholder="Tell AI about your business background, special services, and core customer promises..."
+                      className="w-full px-4 py-3 text-sm clay-input resize-y"
+                    />
+                    <div className="mt-3 p-3.5 bg-[#EFF6FF] rounded-xl border border-[#BFDBFE] flex items-start space-x-3">
+                      <div className="w-6 h-6 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm border border-[#DBEAFE]">
+                        <Sparkles className="w-3.5 h-3.5 text-[#2563EB]" />
+                      </div>
+                      <p className="text-xs text-[#1E3A8A] leading-relaxed">
+                        <strong className="text-[#1D4ED8]">AI Context Engine:</strong> This description is strictly used by our AI to generate highly personalized, accurate, and convincing review suggestions for your customers when they scan your QR code. The more detail, the better the AI output!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Save Footer - Non Sticky */}
+              <div className="flex justify-end pt-4">
                 <button
                   type="submit"
                   disabled={isSavingProfile}
-                  className="px-6 py-2.5 clay-btn-primary text-xs flex items-center space-x-2 disabled:opacity-50 cursor-pointer"
+                  className="w-full sm:w-auto px-8 py-3.5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold rounded-xl shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)] hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:hover:translate-y-0 cursor-pointer"
                 >
                   {isSavingProfile && <Loader2 className="w-4 h-4 animate-spin text-white" />}
-                  <span>{isSavingProfile ? 'Saving Changes...' : 'Save Business Profile'}</span>
+                  <span>{isSavingProfile ? 'Saving Changes...' : 'Save Profile Changes'}</span>
                 </button>
               </div>
             </form>
@@ -1445,7 +1513,7 @@ export const BusinessPortal: React.FC = () => {
               <input
                 type="tel"
                 pattern="^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$"
-                title="Please enter a valid phone number (e.g., +1 (555) 000-1122)"
+                title="Please enter a valid phone number (e.g., +91 98765 43210)"
                 required
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
