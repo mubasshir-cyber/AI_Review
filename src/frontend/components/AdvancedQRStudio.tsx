@@ -5,7 +5,8 @@ import { Modal } from './Modal';
 import { printQRCard, downloadCardAsPNG } from '../utils/printQR';
 import {
   Download, QrCode, Printer, Sparkles, Image as ImageIcon, Upload,
-  Palette, Layout, Layers, Copy, Check, FileText, Smartphone, Monitor, Loader2
+  Palette, Layout, Layers, Copy, Check, FileText, Smartphone, Monitor, Loader2,
+  Star
 } from 'lucide-react';
 
 interface AdvancedQRStudioProps {
@@ -154,84 +155,191 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      const qrOptions: QRCode.QRCodeToDataURLOptions = {
+      const qrObj = QRCode.create(reviewUrl, {
         errorCorrectionLevel: config.errorCorrectionLevel || 'H',
-        margin: config.margin || 2,
-        color: {
-          dark: config.fgColor || '#1E293B',
-          light: config.isTransparent ? '#00000000' : (config.bgColor || '#FFFFFF')
-        },
-        width: size
-      };
+      });
 
-      const rawQrDataUrl = await QRCode.toDataURL(reviewUrl, qrOptions);
-      const qrImg = new Image();
-      qrImg.crossOrigin = 'anonymous';
+      const N = qrObj.modules.size;
+      const marginModules = config.margin || 2;
+      const totalModules = N + marginModules * 2;
+      const cellSize = size / totalModules;
 
-      qrImg.onload = () => {
-        ctx.clearRect(0, 0, size, size);
-        ctx.drawImage(qrImg, 0, 0, size, size);
+      // 1. Draw Background
+      ctx.fillStyle = config.isTransparent ? '#00000000' : (config.bgColor || '#FFFFFF');
+      ctx.fillRect(0, 0, size, size);
 
-        if (includeLogo && currentLogo && currentLogo.trim() !== '') {
-          const logoImg = new Image();
-          logoImg.crossOrigin = 'anonymous';
+      // 2. Helper to draw Eye
+      const drawEye = (startRow: number, startCol: number) => {
+        const eyeX = (startCol + marginModules) * cellSize;
+        const eyeY = (startRow + marginModules) * cellSize;
+        const eyeWidth = cellSize * 7;
+        const eyeInnerWidth = cellSize * 3;
+        const eyeInnerX = eyeX + cellSize * 2;
+        const eyeInnerY = eyeY + cellSize * 2;
 
-          logoImg.onload = () => {
-            const logoPercent = (config.logoSize || 22) / 100;
-            const logoBoxSize = size * logoPercent;
-            const logoX = (size - logoBoxSize) / 2;
-            const logoY = (size - logoBoxSize) / 2;
+        // Clear eye background
+        if (!config.isTransparent) {
+          ctx.fillStyle = config.bgColor || '#FFFFFF';
+          ctx.fillRect(eyeX, eyeY, eyeWidth, eyeWidth);
+        }
 
-            ctx.save();
-            ctx.fillStyle = config.logoBgColor || '#FFFFFF';
-            ctx.strokeStyle = config.logoBorderColor || config.primaryColor || '#2563EB';
-            ctx.lineWidth = config.logoBorderWidth || 4;
+        ctx.fillStyle = config.eyeColor || config.fgColor || '#1E293B';
 
-            if (config.logoShape === 'circle') {
-              ctx.beginPath();
-              ctx.arc(size / 2, size / 2, logoBoxSize / 2, 0, Math.PI * 2);
-              ctx.fill();
-              ctx.stroke();
+        if (config.eyeShape === 'circle') {
+          // Outer circle
+          ctx.beginPath();
+          ctx.arc(eyeX + eyeWidth / 2, eyeY + eyeWidth / 2, eyeWidth / 2, 0, Math.PI * 2);
+          ctx.fill();
 
-              ctx.beginPath();
-              ctx.arc(size / 2, size / 2, (logoBoxSize / 2) - 3, 0, Math.PI * 2);
-              ctx.clip();
-            } else if (config.logoShape === 'rounded') {
-              const radius = 12;
-              ctx.beginPath();
-              ctx.roundRect(logoX, logoY, logoBoxSize, logoBoxSize, radius);
-              ctx.fill();
-              ctx.stroke();
+          // Cutout
+          ctx.fillStyle = config.isTransparent ? '#FFFFFF' : (config.bgColor || '#FFFFFF');
+          ctx.beginPath();
+          ctx.arc(eyeX + eyeWidth / 2, eyeY + eyeWidth / 2, (cellSize * 5) / 2, 0, Math.PI * 2);
+          ctx.fill();
 
-              ctx.beginPath();
-              ctx.roundRect(logoX + 2, logoY + 2, logoBoxSize - 4, logoBoxSize - 4, radius - 2);
-              ctx.clip();
-            } else {
-              ctx.fillRect(logoX, logoY, logoBoxSize, logoBoxSize);
-              ctx.strokeRect(logoX, logoY, logoBoxSize, logoBoxSize);
+          // Inner dot
+          ctx.fillStyle = config.eyeColor || config.fgColor || '#1E293B';
+          ctx.beginPath();
+          ctx.arc(eyeX + eyeWidth / 2, eyeY + eyeWidth / 2, eyeInnerWidth / 2, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (config.eyeShape === 'rounded') {
+          // Outer rounded rect
+          ctx.beginPath();
+          ctx.roundRect(eyeX, eyeY, eyeWidth, eyeWidth, cellSize * 1.8);
+          ctx.fill();
 
-              ctx.beginPath();
-              ctx.rect(logoX + 2, logoY + 2, logoBoxSize - 4, logoBoxSize - 4);
-              ctx.clip();
-            }
+          // Cutout
+          ctx.fillStyle = config.isTransparent ? '#FFFFFF' : (config.bgColor || '#FFFFFF');
+          ctx.beginPath();
+          ctx.roundRect(eyeX + cellSize, eyeY + cellSize, cellSize * 5, cellSize * 5, cellSize * 1.2);
+          ctx.fill();
 
-            ctx.drawImage(logoImg, logoX + 4, logoY + 4, logoBoxSize - 8, logoBoxSize - 8);
-            ctx.restore();
-
-            setQrDataUrl(canvas.toDataURL('image/png'));
-          };
-
-          logoImg.onerror = () => {
-            setQrDataUrl(canvas.toDataURL('image/png'));
-          };
-
-          logoImg.src = currentLogo;
+          // Inner dot
+          ctx.fillStyle = config.eyeColor || config.fgColor || '#1E293B';
+          ctx.beginPath();
+          ctx.roundRect(eyeInnerX, eyeInnerY, eyeInnerWidth, eyeInnerWidth, cellSize * 0.8);
+          ctx.fill();
         } else {
-          setQrDataUrl(canvas.toDataURL('image/png'));
+          // Standard Square
+          ctx.fillRect(eyeX, eyeY, eyeWidth, eyeWidth);
+
+          ctx.fillStyle = config.isTransparent ? '#FFFFFF' : (config.bgColor || '#FFFFFF');
+          ctx.fillRect(eyeX + cellSize, eyeY + cellSize, cellSize * 5, cellSize * 5);
+
+          ctx.fillStyle = config.eyeColor || config.fgColor || '#1E293B';
+          ctx.fillRect(eyeInnerX, eyeInnerY, eyeInnerWidth, eyeInnerWidth);
         }
       };
 
-      qrImg.src = rawQrDataUrl;
+      // 3. Draw standard modules
+      ctx.fillStyle = config.fgColor || '#1E293B';
+
+      for (let r = 0; r < N; r++) {
+        for (let c = 0; c < N; c++) {
+          const isDark = qrObj.modules.get(r, c);
+          if (!isDark) continue;
+
+          // Skip eye regions - they are drawn separately
+          const isEye = (r < 7 && c < 7) || (r < 7 && c >= N - 7) || (r >= N - 7 && c < 7);
+          if (isEye) continue;
+
+          const x = (c + marginModules) * cellSize;
+          const y = (r + marginModules) * cellSize;
+
+          if (config.dotStyle === 'dots' || config.dotStyle === 'circle') {
+            ctx.beginPath();
+            ctx.arc(x + cellSize / 2, y + cellSize / 2, cellSize * 0.42, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (config.dotStyle === 'rounded') {
+            ctx.beginPath();
+            ctx.roundRect(x + 0.5, y + 0.5, cellSize - 0.5, cellSize - 0.5, cellSize * 0.35);
+            ctx.fill();
+          } else {
+            // square blocks
+            ctx.fillRect(x, y, cellSize + 0.5, cellSize + 0.5);
+          }
+        }
+      }
+
+      // Draw custom eyes
+      drawEye(0, 0);
+      drawEye(0, N - 7);
+      drawEye(N - 7, 0);
+
+      // Draw logo in center if enabled
+      if (includeLogo && currentLogo && currentLogo.trim() !== '') {
+        const logoImg = new Image();
+        logoImg.crossOrigin = 'anonymous';
+
+        logoImg.onload = () => {
+          const logoPercent = (config.logoSize || 22) / 100;
+          const logoBoxSize = size * logoPercent;
+          const logoX = (size - logoBoxSize) / 2;
+          const logoY = (size - logoBoxSize) / 2;
+
+          ctx.save();
+          ctx.fillStyle = config.logoBgColor || '#FFFFFF';
+          ctx.strokeStyle = config.logoBorderColor || config.primaryColor || '#2563EB';
+          ctx.lineWidth = config.logoBorderWidth || 4;
+
+          if (config.logoShape === 'circle') {
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, logoBoxSize / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(size / 2, size / 2, (logoBoxSize / 2) - 3, 0, Math.PI * 2);
+            ctx.clip();
+          } else if (config.logoShape === 'rounded') {
+            const radius = 12;
+            ctx.beginPath();
+            ctx.roundRect(logoX, logoY, logoBoxSize, logoBoxSize, radius);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.roundRect(logoX + 2, logoY + 2, logoBoxSize - 4, logoBoxSize - 4, radius - 2);
+            ctx.clip();
+          } else {
+            ctx.fillRect(logoX, logoY, logoBoxSize, logoBoxSize);
+            ctx.strokeRect(logoX, logoY, logoBoxSize, logoBoxSize);
+
+            ctx.beginPath();
+            ctx.rect(logoX + 2, logoY + 2, logoBoxSize - 4, logoBoxSize - 4);
+            ctx.clip();
+          }
+
+          const logoW = logoImg.width;
+          const logoH = logoImg.height;
+          const maxLogoSize = logoBoxSize - 8;
+          let drawW = maxLogoSize;
+          let drawH = maxLogoSize;
+          if (logoW > logoH) {
+            drawH = maxLogoSize * (logoH / logoW);
+          } else if (logoH > logoW) {
+            drawW = maxLogoSize * (logoW / logoH);
+          }
+          const drawX = logoX + 4 + (maxLogoSize - drawW) / 2;
+          const drawY = logoY + 4 + (maxLogoSize - drawH) / 2;
+
+          ctx.drawImage(logoImg, drawX, drawY, drawW, drawH);
+          ctx.restore();
+
+          setQrDataUrl(canvas.toDataURL('image/png'));
+        };
+
+        logoImg.onerror = () => {
+          setQrDataUrl(canvas.toDataURL('image/png'));
+        };
+
+        const proxiedLogo = (currentLogo.startsWith('http') && !currentLogo.startsWith(window.location.origin)) 
+          ? `/api/settings/proxy-image?url=${encodeURIComponent(currentLogo)}` 
+          : currentLogo;
+        logoImg.src = proxiedLogo;
+      } else {
+        setQrDataUrl(canvas.toDataURL('image/png'));
+      }
     } catch (e) {
       console.error('Failed to generate QR Code:', e);
     }
@@ -553,7 +661,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-[#EEF2F7] rounded-2xl border border-[#DCE3EC] flex items-center justify-center overflow-hidden shrink-0 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
                     {currentLogo ? (
-                      <img src={currentLogo} alt="Center Logo" className="w-full h-full object-cover" />
+                      <img src={currentLogo} alt="Center Logo" className="w-full h-full object-contain" />
                     ) : (
                       <ImageIcon className="w-6 h-6 text-[#2563EB]" />
                     )}
@@ -752,7 +860,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
               <span>Live Card Preview</span>
             </span>
 
-            <div className="flex items-center space-x-1 bg-[#EEF2F7] border border-[#DCE3EC] p-1 rounded-2xl">
+            {/* <div className="flex items-center space-x-1 bg-[#EEF2F7] border border-[#DCE3EC] p-1 rounded-2xl">
               <button
                 type="button"
                 onClick={() => setPreviewMode('TABLET')}
@@ -777,49 +885,144 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
               >
                 <Printer className="w-3.5 h-3.5" />
               </button>
-            </div>
+            </div> */}
           </div>
 
           {/* Interactive Card Container */}
           <div className="w-full flex justify-center py-2">
-            <div className="w-full max-w-[280px] bg-[#EEF2F7] rounded-3xl border border-[#DCE3EC] p-6 flex flex-col items-center text-center shadow-[inset_1px_1px_3px_rgba(255,255,255,0.9),4px_4px_12px_rgba(100,116,139,0.08)]">
-              {/* Header Badge */}
-              <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-[#2563EB] text-white font-extrabold text-[10px] uppercase tracking-wider mb-2 rounded-full shadow-[1px_1px_4px_rgba(37,99,235,0.3)]">
-                <Sparkles className="w-3 h-3 text-white" />
-                <span>{businessName}</span>
+            {previewMode === 'MOBILE' ? (
+              <div className="w-[260px] h-[450px] bg-white rounded-[40px] border-[8px] border-slate-900 shadow-2xl relative overflow-hidden flex flex-col font-sans">
+                {/* Speaker/Camera notch */}
+                <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-16 h-3 bg-slate-900 rounded-full z-20" />
+                
+                {/* Mobile Screen Content (Mini CustomerPortal) */}
+                <div className="flex-1 overflow-y-auto bg-[#F5F7FB] p-3 pt-6 flex flex-col items-center text-center space-y-3">
+                  {/* Logo */}
+                  <div className="w-9 h-9 bg-white rounded-xl shadow-sm border border-[#DCE3EC] overflow-hidden flex items-center justify-center p-1">
+                    {includeLogo && currentLogo ? (
+                      <img src={currentLogo} alt="Logo" className="w-full h-full object-contain" />
+                    ) : (
+                      <ImageIcon className="w-4 h-4 text-[#2563EB]" />
+                    )}
+                  </div>
+                  
+                  <div>
+                    <span className="text-[9px] font-extrabold text-[#2563EB] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                      {businessName}
+                    </span>
+                    <h4 className="text-[10px] font-bold mt-1 text-slate-800">{branch.name}</h4>
+                  </div>
+                  
+                  <div className="bg-white p-3 rounded-xl border border-[#DCE3EC] shadow-sm w-full space-y-2">
+                    <p className="text-[9px] font-bold text-slate-700">Spill the tea! How was your visit? ☕️</p>
+                    <div className="flex justify-center space-x-0.5">
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <Star key={star} className="w-4 h-4 text-amber-400 fill-amber-400" />
+                      ))}
+                    </div>
+                    <span className="text-[8px] font-extrabold text-[#2563EB] bg-blue-50 px-2 py-0.5 rounded-full inline-block">
+                      😍 Absolutely Slaps! 10/10 ✨
+                    </span>
+                  </div>
+                  
+                  <div className="bg-white p-2.5 rounded-xl border border-[#DCE3EC] shadow-sm w-full text-[8px] text-slate-500 text-left space-y-1">
+                    <p className="font-bold text-slate-700">Gemini AI Review Assistant:</p>
+                    <p className="italic bg-slate-50 p-1.5 rounded-lg border border-slate-100 leading-snug">
+                      "Had a fantastic experience at {businessName}! The service was top-tier and the staff was super friendly. Highly recommend!"
+                    </p>
+                  </div>
+                </div>
               </div>
-
-              <h3 className="text-base font-extrabold tracking-tight leading-snug text-[#1E293B]">
-                {config.frameTitle}
-              </h3>
-
-              <p className="text-[10px] text-[#64748B] mt-0.5 font-bold">
-                {config.frameSubtitle}
-              </p>
-
-              {/* QR Image with centered logo canvas output */}
-              <div className="mt-3 p-2 bg-white rounded-2xl border border-[#DCE3EC] shadow-[2px_2px_6px_rgba(100,116,139,0.06)]">
-                {qrDataUrl ? (
-                  <img src={qrDataUrl} alt="QR Scanner" className="w-44 h-44 object-contain" />
-                ) : (
-                  <div className="w-44 h-44 bg-[#EEF2F7] rounded-2xl flex items-center justify-center text-[#1E293B]">
-                    <QrCode className="w-8 h-8 animate-pulse text-[#2563EB]" />
+            ) : previewMode === 'PRINT' ? (
+              <div className="w-full max-w-[280px] bg-white border-2 border-dashed border-[#CBD5E1] p-3 rounded-2xl text-center space-y-2">
+                <span className="text-[8px] font-bold text-[#64748B] uppercase tracking-wider block">A4 Folding Paper Template</span>
+                
+                {/* Top rotated card */}
+                {config.frameStyle === 'table-tent' && (
+                  <div className="scale-[0.6] opacity-50 origin-top rotate-180 border border-[#DCE3EC] rounded-xl p-2 bg-[#EEF2F7] flex flex-col items-center">
+                    <span className="text-[7px] font-bold">{businessName}</span>
+                    <h4 className="text-[8px] font-bold">{config.frameTitle}</h4>
+                    <div className="w-12 h-12 bg-white border rounded my-1 flex items-center justify-center"><QrCode className="w-5 h-5 text-slate-400" /></div>
                   </div>
                 )}
-              </div>
-
-              {/* Google Rating Badge */}
-              {config.showGoogleBadge && (
-                <div className="mt-3 bg-white text-[#1E293B] px-3 py-1 rounded-full border border-[#DCE3EC] flex items-center space-x-1.5 text-[10px] font-extrabold shadow-[2px_2px_6px_rgba(100,116,139,0.06)]">
-                  <span className="text-[#2563EB]">Google ★ {config.badgeRating}</span>
-                  <span className="text-[#64748B]">({config.badgeReviewCount} reviews)</span>
+                
+                {/* Fold line */}
+                <div className="border-t-2 border-dashed border-red-400 my-1 relative">
+                  <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 bg-white px-2 text-[7px] font-bold text-red-500 uppercase tracking-widest">✂️ Fold Line ✂️</span>
                 </div>
-              )}
-
-              <div className="mt-3 text-[9px] text-[#64748B] font-mono font-bold">
-                Powered by ReviewScore AI
+                
+                {/* Bottom upright card */}
+                <div className="scale-[0.6] opacity-70 origin-bottom border border-[#DCE3EC] rounded-xl p-2 bg-[#EEF2F7] flex flex-col items-center">
+                  <span className="text-[7px] font-bold">{businessName}</span>
+                  <h4 className="text-[8px] font-bold">{config.frameTitle}</h4>
+                  <div className="w-12 h-12 bg-white border rounded my-1 flex items-center justify-center"><QrCode className="w-5 h-5 text-slate-400" /></div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div 
+                className="w-full max-w-[280px] rounded-3xl p-6 flex flex-col items-center text-center shadow-[inset_1px_1px_3px_rgba(255,255,255,0.9),4px_4px_12px_rgba(100,116,139,0.08)]"
+                style={{ 
+                  border: `3px solid ${config.primaryColor || '#2563EB'}`,
+                  backgroundColor: config.bgColor || '#FFFFFF'
+                }}
+              >
+                {/* Header Badge */}
+                <div 
+                  className="inline-flex items-center space-x-1.5 px-3 py-1 text-white font-extrabold text-[10px] uppercase tracking-wider mb-2 rounded-full shadow-[1px_1px_4px_rgba(37,99,235,0.3)]"
+                  style={{ backgroundColor: config.primaryColor || '#2563EB' }}
+                >
+                  <Sparkles className="w-3 h-3 text-white" />
+                  <span>{businessName}</span>
+                </div>
+
+                <h3 
+                  className="text-base font-extrabold tracking-tight leading-snug"
+                  style={{ color: config.primaryColor || '#1E293B' }}
+                >
+                  {config.frameTitle}
+                </h3>
+
+                <p 
+                  className="text-[10px] mt-0.5 font-bold"
+                  style={{ color: config.accentColor || '#64748B' }}
+                >
+                  {config.frameSubtitle}
+                </p>
+
+                {/* QR Image with centered logo canvas output */}
+                <div className="mt-3 p-2 bg-white rounded-2xl border border-[#DCE3EC] shadow-[2px_2px_6px_rgba(100,116,139,0.06)]">
+                  {qrDataUrl ? (
+                    <img src={qrDataUrl} alt="QR Scanner" className="w-44 h-44 object-contain" />
+                  ) : (
+                    <div className="w-44 h-44 bg-[#EEF2F7] rounded-2xl flex items-center justify-center text-[#1E293B]">
+                      <QrCode className="w-8 h-8 animate-pulse text-[#2563EB]" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Google Rating Badge */}
+                {config.showGoogleBadge && (
+                  <div 
+                    className="mt-3 px-3 py-1 rounded-full border flex items-center space-x-1.5 text-[10px] font-extrabold shadow-[2px_2px_6px_rgba(100,116,139,0.06)]"
+                    style={{
+                      backgroundColor: `${config.accentColor || '#38BDF8'}15`,
+                      borderColor: `${config.accentColor || '#38BDF8'}30`,
+                      color: config.primaryColor || '#1E293B'
+                    }}
+                  >
+                    <span>Google ★ {config.badgeRating}</span>
+                    <span style={{ color: `${config.primaryColor || '#1E293B'}bb` }}>({config.badgeReviewCount} reviews)</span>
+                  </div>
+                )}
+
+                <div 
+                  className="mt-3 text-[9px] font-mono font-bold"
+                  style={{ color: config.accentColor || '#64748B' }}
+                >
+                  Powered by ReviewScore AI
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Quick Action Buttons */}

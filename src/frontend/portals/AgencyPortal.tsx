@@ -1253,9 +1253,11 @@ export const AgencyPortal: React.FC = () => {
                             onClick={() => loadBusinessDetails(b)}
                             className="cursor-pointer group"
                           >
-                            <td className="font-extrabold text-[#1E293B] group-hover:text-[#2563EB] flex items-center space-x-2">
-                              <span>{b.name}</span>
-                              <ChevronRight className="w-3.5 h-3.5 text-[#64748B] group-hover:text-[#2563EB]" />
+                            <td className="font-extrabold text-[#1E293B] group-hover:text-[#2563EB]">
+                              <div className="flex items-center justify-between space-x-2 w-full py-1">
+                                <span>{b.name}</span>
+                                <ChevronRight className="w-3.5 h-3.5 text-[#64748B] group-hover:text-[#2563EB] shrink-0" />
+                              </div>
                             </td>
                             <td className="text-[#64748B]">{b.ownerName} ({b.ownerEmail})</td>
                             <td>

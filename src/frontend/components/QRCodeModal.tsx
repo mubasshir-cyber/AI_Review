@@ -94,7 +94,20 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             ctx.arc(size / 2, size / 2, (logoSize / 2) - 2, 0, Math.PI * 2);
             ctx.clip();
 
-            ctx.drawImage(logoImg, logoX + 2, logoY + 2, logoSize - 4, logoSize - 4);
+            const logoW = logoImg.width;
+            const logoH = logoImg.height;
+            const maxLogoSize = logoSize - 4;
+            let drawW = maxLogoSize;
+            let drawH = maxLogoSize;
+            if (logoW > logoH) {
+              drawH = maxLogoSize * (logoH / logoW);
+            } else if (logoH > logoW) {
+              drawW = maxLogoSize * (logoW / logoH);
+            }
+            const drawX = logoX + 2 + (maxLogoSize - drawW) / 2;
+            const drawY = logoY + 2 + (maxLogoSize - drawH) / 2;
+
+            ctx.drawImage(logoImg, drawX, drawY, drawW, drawH);
             ctx.restore();
 
             setQrDataUrl(canvas.toDataURL('image/png'));
@@ -262,7 +275,7 @@ export const QRCodeModal: React.FC<QRCodeModalProps> = ({
             <div className="flex items-center space-x-3 mb-2">
               <div className="w-10 h-10 border border-[#DCE3EC] bg-[#EEF2F7] rounded-2xl text-[#1E293B] flex items-center justify-center overflow-hidden shrink-0 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
                 {currentLogo ? (
-                  <img src={currentLogo} alt="Logo" className="w-full h-full object-cover" />
+                  <img src={currentLogo} alt="Logo" className="w-full h-full object-contain" />
                 ) : (
                   <ImageIcon className="w-5 h-5 text-[#2563EB]" />
                 )}

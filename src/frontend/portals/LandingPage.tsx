@@ -10,7 +10,7 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [email, setEmail] = useState('');
-  const [whatsappPhone, setWhatsappPhone] = useState('919876543210');
+  const [whatsappPhone, setWhatsappPhone] = useState('917400450167');
   const [showContact, setShowContact] = useState(false);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
 
@@ -45,13 +45,13 @@ export const LandingPage: React.FC = () => {
 
   const getWhatsappUrl = (plan: Plan) => {
     const text = `Hello! I am interested in purchasing the *${plan.name}* plan ($${plan.priceMonthly}/mo) for ReviewScore AI. Features: Up to ${plan.maxBranches} branches & ${plan.monthlyTokens.toLocaleString()} AI tokens. Please share onboarding details!`;
-    const cleanNumber = whatsappPhone || '919876543210';
+    const cleanNumber = whatsappPhone || '917400450167';
     return `https://wa.me/${cleanNumber}?text=${encodeURIComponent(text)}`;
   };
 
   const handleContactWhatsApp = (e: React.MouseEvent) => {
     e.preventDefault();
-    const cleanNumber = whatsappPhone || '919876543210';
+    const cleanNumber = whatsappPhone || '917400450167';
     const message = encodeURIComponent('Hi! I want to enquire about setting up ReviewScore AI for my business.');
     window.open(`https://wa.me/${cleanNumber}?text=${message}`, '_blank');
   };
@@ -324,6 +324,8 @@ export const LandingPage: React.FC = () => {
             </p>
           </div>
 
+
+          {/* ORIGINAL PRICING CARDS (Commented out as requested)
           {isLoadingPlans ? (
             <div className="text-center py-12 text-slate-500 text-xs font-medium">Loading packages...</div>
           ) : plans.length === 0 ? (
@@ -394,8 +396,98 @@ export const LandingPage: React.FC = () => {
               ))}
             </div>
           )}
+          */}
+
+          {/* HIGH-VISIBILITY PLATFORM FEATURES GRID */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch mt-4">
+            {[
+              {
+                title: 'Gemini AI Review Assistant',
+                desc: 'Generate authentic, detailed, and highly contextual reviews tailored to specific positive highlights selected by customers.',
+                icon: Sparkles,
+                color: 'text-blue-600 bg-blue-50 border-blue-100',
+                details: ['1-Tap customer copy & paste', 'Natural sentiment adjustments', 'Custom staffing & service naming']
+              },
+              {
+                title: 'Private Gatekeeper Intercept',
+                desc: 'Prevent public low-star ratings. Intercept reviews below 4 stars and redirect customers to a private manager feedback form.',
+                icon: ShieldCheck,
+                color: 'text-rose-600 bg-rose-50 border-rose-100',
+                details: ['Direct email resolution alerts', 'Keyword complaint categorization', 'Saves local SEO rankings']
+              },
+              {
+                title: 'Advanced QR Custom Studio',
+                desc: 'Create highly scannable, custom standee graphics directly in the dashboard matching your physical store aesthetics.',
+                icon: QrCode,
+                color: 'text-indigo-600 bg-indigo-50 border-indigo-100',
+                details: ['Dot pattern & custom eye shapes', 'Centering of brand logos (aspect ratio lock)', '300 DPI high-res PDF & vector SVG export']
+              },
+              {
+                title: 'Smart Highlights Studio',
+                desc: 'Review Score automates highlight tags based on actual client comments and extracts prominent keywords to showcase.',
+                icon: Star,
+                color: 'text-amber-600 bg-amber-50 border-amber-100',
+                details: ['Dynamic tag generation', 'Review history keyword metrics', 'Instant custom highlight updates']
+              },
+              {
+                title: 'Multi-Location Analytics',
+                desc: 'Get precise tracking data across all physical branches to see where reviews are performing best.',
+                icon: TrendingUp,
+                color: 'text-emerald-600 bg-emerald-50 border-emerald-100',
+                details: ['Daily QR scan logging', 'AI token utilization metrics', 'Device and browser analytics']
+              },
+              {
+                title: 'SaaS Agency & Tenant Console',
+                desc: 'Complete white-labeled system settings to customize quotas, subscription plans, ads, and platform assets.',
+                icon: Building2,
+                color: 'text-slate-600 bg-slate-50 border-slate-100',
+                details: ['Custom token allocation setting', 'Client ad banner manager', 'Direct database sync and reset']
+              }
+            ].map((feat, idx) => {
+              const Icon = feat.icon;
+              return (
+                <div
+                  key={idx}
+                  className="bg-white border-2 border-slate-100 rounded-3xl p-8 flex flex-col justify-between hover:border-blue-500 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                >
+                  <div className="space-y-6">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center shrink-0 shadow-xs ${feat.color}`}>
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900 leading-snug tracking-tight">{feat.title}</h3>
+                    </div>
+
+                    <p className="text-sm text-slate-600 leading-relaxed font-medium">{feat.desc}</p>
+
+                    <div className="space-y-3 pt-5 border-t border-slate-100 text-xs text-slate-500 font-semibold">
+                      {feat.details.map((detail, dIdx) => (
+                        <div key={dIdx} className="flex items-center space-x-2.5">
+                          <Check className="w-4 h-4 text-blue-600 shrink-0 stroke-[3]" />
+                          <span className="text-slate-700">{detail}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-16 text-center space-y-4">
+            <button
+              onClick={handleContactWhatsApp}
+              className="inline-flex items-center justify-center space-x-3 px-10 py-5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-extrabold rounded-2xl transition-all cursor-pointer shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <MessageCircle className="w-5 h-5 text-emerald-400 fill-emerald-400" />
+              <span>Inquire & Onboard on WhatsApp</span>
+            </button>
+            <p className="text-xs font-bold text-slate-500">Get custom onboarding, whitelabel setup, and token limit configuration instantly.</p>
+          </div>
         </div>
       </section>
+        {/* </div>
+      </section> */}
 
       {/* FAQ SECTION */}
       <section className="py-16 sm:py-20 max-w-4xl mx-auto px-4 sm:px-6">
@@ -407,20 +499,28 @@ export const LandingPage: React.FC = () => {
         <div className="space-y-3">
           {[
             {
-              q: 'How does the WhatsApp plan inquiry work?',
-              a: 'Clicking "Inquire on WhatsApp" opens a direct chat with our support team prefilled with your chosen plan specifications for instant onboarding.'
+              q: 'How does the Gemini AI review assistant formulate drafts?',
+              a: 'It reads the service highlights selected by the customer (like "Gentle Care" or "Great Vibes") along with any custom staff names, then calls Gemini AI to write a natural, grammatically correct 5-star review. Customers can edit the text before posting.'
             },
             {
-              q: 'Does ReviewScore AI require customers to download an app?',
-              a: 'No! Customers simply scan the QR code using their phone camera. The review assistant opens instantly in their browser.'
+              q: 'What happens if a customer selects a low rating (1 to 3 stars)?',
+              a: 'Our smart gatekeeper automatically intercepts low ratings. Instead of routing the customer to Google Maps, it displays a private feedback form. The comments are captured privately in your dashboard, allowing you to resolve complaints before they affect your public ranking.'
             },
             {
-              q: 'How does the private feedback gatekeeper work?',
-              a: 'Customers rating 4 or 5 stars receive a generated draft and a 1-tap redirect to Google Maps. Ratings from 1 to 3 stars route to a private manager feedback form.'
+              q: 'Can I customize the tabletop QR standee designs?',
+              a: 'Yes! The Advanced QR Studio allows you to select preset styles or customize foreground/background colors, dot patterns, corner eye shapes, and upload your company logo with aspect-ratio locking. You can download designs as 300 DPI PNG print cards or vector SVGs.'
             },
             {
-              q: 'Can I manage multiple branch locations?',
-              a: 'Yes! You can configure multiple branches with individual Google Place IDs and dedicated printable QR codes.'
+              q: 'Do customers need to download an app or create an account?',
+              a: 'No app or registration is required. Customers scan the QR standee using their native smartphone camera, and the review assistant loads instantly in their mobile browser, keeping the process fast and frictionless.'
+            },
+            {
+              q: 'How are monthly AI tokens monitored and allocated?',
+              a: 'Each AI-generated review consumes a small amount of tokens. Business owners can track their token utilization in real-time on the dashboard. Agency administrators can dynamically allocate monthly token quotas and manage subscription plans for client accounts.'
+            },
+            {
+              q: 'Does this platform support white-labeling for marketing agencies?',
+              a: 'Yes! Agency admins have full access to an enterprise console where they can white-label portal settings, customize plan features, distribute advertising banners across client dashboards, and manage primary API credentials.'
             },
           ].map((faq, idx) => (
             <div key={idx} className="bg-white p-5 border border-slate-200/80 rounded-xl space-y-1 shadow-2xs">

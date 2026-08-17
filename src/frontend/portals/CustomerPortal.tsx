@@ -330,7 +330,7 @@ export const CustomerPortal: React.FC = () => {
         <div className="bg-[#EEF2F7] p-6 text-center text-[#1E293B] relative flex flex-col items-center border-b border-[#DCE3EC] shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
           {logoUrl && (
             <div className="w-14 h-14 bg-white p-1 rounded-2xl shadow-[2px_2px_6px_rgba(100,116,139,0.1)] mb-3 border border-[#DCE3EC] overflow-hidden flex items-center justify-center shrink-0">
-              <img src={logoUrl} alt={businessName} className="w-full h-full object-cover rounded-xl" />
+              <img src={logoUrl} alt={businessName} className="w-full h-full object-contain rounded-xl" />
             </div>
           )}
 
@@ -617,13 +617,14 @@ export const CustomerPortal: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#1E293B] mb-1">Private Comments for Management (Optional)</label>
+                <label className="block text-xs font-bold text-[#1E293B] mb-1">Private Comments for Management (Required)</label>
                 <textarea
                   rows={3}
                   value={feedbackComments}
                   onChange={e => setFeedbackComments(e.target.value)}
                   placeholder="Please describe what happened so we can address it..."
                   className="w-full p-3.5 text-xs clay-input"
+                  required
                 />
               </div>
 
