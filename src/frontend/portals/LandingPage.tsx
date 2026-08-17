@@ -10,7 +10,7 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [email, setEmail] = useState('');
-  const [whatsappPhone, setWhatsappPhone] = useState('919876543210');
+  const [whatsappPhone, setWhatsappPhone] = useState('917400450167');
   const [showContact, setShowContact] = useState(false);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
 
@@ -45,13 +45,13 @@ export const LandingPage: React.FC = () => {
 
   const getWhatsappUrl = (plan: Plan) => {
     const text = `Hello! I am interested in purchasing the *${plan.name}* plan ($${plan.priceMonthly}/mo) for ReviewScore AI. Features: Up to ${plan.maxBranches} branches & ${plan.monthlyTokens.toLocaleString()} AI tokens. Please share onboarding details!`;
-    const cleanNumber = whatsappPhone || '919876543210';
+    const cleanNumber = whatsappPhone || '917400450167';
     return `https://wa.me/${cleanNumber}?text=${encodeURIComponent(text)}`;
   };
 
   const handleContactWhatsApp = (e: React.MouseEvent) => {
     e.preventDefault();
-    const cleanNumber = whatsappPhone || '919876543210';
+    const cleanNumber = whatsappPhone || '917400450167';
     const message = encodeURIComponent('Hi! I want to enquire about setting up ReviewScore AI for my business.');
     window.open(`https://wa.me/${cleanNumber}?text=${message}`, '_blank');
   };

@@ -35,7 +35,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
     }, 2500);
   };
 
-  const whatsappClean = supportPhone.replace(/[^0-9]/g, '') || '919876543210';
+  const whatsappClean = supportPhone.replace(/[^0-9]/g, '') || '917400450167';
 
   return (
     <Modal
