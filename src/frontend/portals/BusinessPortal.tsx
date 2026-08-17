@@ -15,7 +15,9 @@ import {
   Building2, QrCode, Star, MessageSquare, TrendingUp, CreditCard,
   Plus, Edit, Trash2, Search, ShieldAlert, Sparkles, CheckCircle2, Clock, Phone, Mail,
   ExternalLink, Settings, Tag, LayoutDashboard, Store, BarChart3, Lock, Globe, FileText,
-  User, Menu, X, Loader2, ArrowRight, Share2, Sparkle, AlertCircle
+  User, Menu, X, Loader2, ArrowRight, Share2, Sparkle, AlertCircle,
+  ChevronRight,
+  ChevronLeft
 } from 'lucide-react';
 import { CategorySearchDropdown } from '../components/CategorySearchDropdown';
 import { useLenisSmoothScroll } from '../hooks/useLenisSmoothScroll';
@@ -79,6 +81,9 @@ export const BusinessPortal: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
+  const [currentAdIndex, setCurrentAdIndex] = useState(0);
+  const [isVerifyPasswordModalOpen, setIsVerifyPasswordModalOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
 
   const bizId = currentBusiness?.id;
 
@@ -129,6 +134,14 @@ export const BusinessPortal: React.FC = () => {
     loadData();
   }, [bizId, activeTab]);
 
+  useEffect(() => {
+    if (ads.length <= 1 || activeTab !== 'DASHBOARD') return;
+    const interval = setInterval(() => {
+      setCurrentAdIndex(prev => (prev + 1) % ads.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [ads.length, activeTab]);
+
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!bizId) return;
@@ -168,7 +181,7 @@ export const BusinessPortal: React.FC = () => {
     }
   };
 
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const handleResetPassword = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!newPassword.trim()) {
@@ -184,18 +197,35 @@ export const BusinessPortal: React.FC = () => {
       return;
     }
 
+    setCurrentPassword('');
+    setIsVerifyPasswordModalOpen(true);
+  };
+
+  const handleConfirmResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!currentPassword.trim()) {
+      showToast('Current password is required.', 'error');
+      return;
+    }
+
     setIsSubmittingPassword(true);
     try {
       const res = await fetchWithAuth('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPassword: newPassword.trim() }),
+        body: JSON.stringify({ 
+          newPassword: newPassword.trim(),
+          currentPassword: currentPassword.trim()
+        }),
       });
       const json = await res.json();
       if (res.ok && json.success) {
         showToast('Password updated successfully!', 'success');
         setNewPassword('');
         setConfirmPassword('');
+        setCurrentPassword('');
+        setIsVerifyPasswordModalOpen(false);
       } else {
         showToast(json.message || json.error || 'Failed to update password.', 'error');
       }
@@ -508,7 +538,32 @@ export const BusinessPortal: React.FC = () => {
         <div className="p-4 sm:p-6 md:p-8 space-y-6">
         {/* Banner Announcement */}
         {ads.length > 0 && activeTab === 'DASHBOARD' && (
-          <BannerAd ad={ads[0]} />
+          <div className="space-y-2">
+            <div key={currentAdIndex} className="transition-all duration-500 ease-in-out animate-in fade-in-50 zoom-in-98 duration-300">
+              <BannerAd ad={ads[currentAdIndex]} />
+            </div>
+            {ads.length > 1 && (
+              <div className="flex items-center justify-end space-x-2 text-xs font-bold text-[#64748B] px-1">
+                <span>Announcement {currentAdIndex + 1} of {ads.length}</span>
+                <ChevronLeft
+                  type="button"
+                  onClick={() => setCurrentAdIndex(prev => (prev - 1 + ads.length) % ads.length)}
+                  className="w-7 h-7 flex items-center justify-center bg-white border border-[#DCE3EC] rounded-xl hover:bg-[#EEF2F7] cursor-pointer shadow-2xs font-black text-sm"
+                  aria-label="Previous announcement"
+                >
+                  &lt;
+                </ChevronLeft>
+                <ChevronRight
+                  type="button"
+                  onClick={() => setCurrentAdIndex(prev => (prev + 1) % ads.length)}
+                  className="w-7 h-7 flex items-center justify-center bg-white border border-[#DCE3EC] rounded-xl hover:bg-[#EEF2F7] cursor-pointer shadow-2xs font-black text-sm"
+                  aria-label="Next announcement"
+                >
+                  &gt;
+                </ChevronRight>
+              </div>
+            )}
+          </div>
         )}
 
         {/* TAB 1: DASHBOARD OVERVIEW */}
@@ -1419,6 +1474,46 @@ export const BusinessPortal: React.FC = () => {
         businessName={currentBusiness?.name}
         logoUrl={currentBusiness?.logoUrl}
       />
+
+      {/* PASSWORD VERIFICATION MODAL */}
+      <Modal
+        isOpen={isVerifyPasswordModalOpen}
+        onClose={() => setIsVerifyPasswordModalOpen(false)}
+        title="Verify Current Password"
+        subtitle="To update your password, please confirm your identity by entering your current password."
+        maxWidth="max-w-md"
+      >
+        <form onSubmit={handleConfirmResetPassword} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-[#1E293B] mb-1">Current Password</label>
+            <input
+              type="password"
+              required
+              value={currentPassword}
+              onChange={e => setCurrentPassword(e.target.value)}
+              placeholder="Enter your current password"
+              className="w-full px-3.5 py-2.5 text-xs clay-input"
+            />
+          </div>
+          <div className="flex space-x-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setIsVerifyPasswordModalOpen(false)}
+              className="w-1/2 py-2.5 clay-btn-secondary text-xs cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmittingPassword}
+              className="w-1/2 py-2.5 clay-btn-primary text-xs flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
+            >
+              {isSubmittingPassword && <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />}
+              <span>Confirm Reset</span>
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* EDIT/ADD BRANCH MODAL */}
       <Modal

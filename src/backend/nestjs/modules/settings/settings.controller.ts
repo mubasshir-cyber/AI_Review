@@ -1,12 +1,35 @@
-import { Controller, Get, Post, Put, Body, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Inject, Query, Res } from '@nestjs/common';
 import { SettingsService } from './settings.service';
 import { ApiKeyConfig, SystemSettings, Business, Branch } from '../../../../types';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { type Response } from 'express';
 
 @Controller('settings')
 export class SettingsController {
   constructor(@Inject(SettingsService) private readonly settingsService: SettingsService) {}
+
+  @Public()
+  @Get('proxy-image')
+  async proxyImage(@Query('url') url: string, @Res() res: Response) {
+    if (!url) {
+      return res.status(400).send('URL query parameter is required');
+    }
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        return res.status(response.status).send(`Failed to fetch image: ${response.statusText}`);
+      }
+      const contentType = response.headers.get('content-type') || 'image/png';
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      return res.send(buffer);
+    } catch (err: any) {
+      return res.status(500).send(`Error proxying image: ${err.message}`);
+    }
+  }
 
   @Roles('AGENCY_ADMIN')
   @Get('config')

@@ -253,13 +253,6 @@ export function printQRCard(params: PrintQRCardParams) {
           }
         </div>
 
-        <script>
-          window.onload = function() {
-            setTimeout(function() {
-              window.print();
-            }, 300);
-          };
-        </script>
       </body>
     </html>
   `;
@@ -310,6 +303,14 @@ function openPopupWindow(htmlContent: string) {
     if (printWindow) {
       printWindow.document.write(htmlContent);
       printWindow.document.close();
+      setTimeout(() => {
+        try {
+          printWindow.focus();
+          printWindow.print();
+        } catch (e) {
+          console.error('Popup print failed', e);
+        }
+      }, 500);
     } else {
       window.print();
     }

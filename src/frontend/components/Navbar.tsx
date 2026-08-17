@@ -96,7 +96,7 @@ export const Navbar: React.FC = () => {
                 <img
                   src={currentBusiness?.logoUrl || user.avatarUrl}
                   alt={user.name}
-                  className="w-8 h-8 rounded-full object-cover border border-slate-200 shadow-sm bg-white"
+                  className="w-8 h-8 rounded-full object-contain border border-slate-200 shadow-sm bg-white"
                 />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-extrabold text-xs flex items-center justify-center shadow-inner ring-1 ring-black/10">

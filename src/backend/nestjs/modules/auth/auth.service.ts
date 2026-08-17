@@ -200,7 +200,7 @@ export class AuthService {
     throw new BadRequestException('Failed to update password.');
   }
 
-  async resetPassword(requestorId: string, dto: { targetEmail?: string; targetUserId?: string; newPassword?: string }) {
+  async resetPassword(requestorId: string, dto: { targetEmail?: string; targetUserId?: string; newPassword?: string; currentPassword?: string }) {
     if (!dto.newPassword || !dto.newPassword.trim()) {
       throw new BadRequestException('New password is required.');
     }
@@ -217,6 +217,17 @@ export class AuthService {
 
     if (requestor.role !== 'AGENCY_ADMIN' && target !== requestor.id && target !== requestor.email) {
       throw new ForbiddenException('You do not have permission to reset passwords for other accounts.');
+    }
+
+    // Verify current password for non-admins
+    if (requestor.role !== 'AGENCY_ADMIN') {
+      if (!dto.currentPassword || !dto.currentPassword.trim()) {
+        throw new BadRequestException('Current password is required.');
+      }
+      const verification = await db.authenticateUser(requestor.email, dto.currentPassword);
+      if (verification.errorReason === 'INVALID_PASSWORD' || !verification.user) {
+        throw new BadRequestException('Current password is incorrect.');
+      }
     }
 
     const updated = await db.updateUserPassword(target, dto.newPassword.trim());

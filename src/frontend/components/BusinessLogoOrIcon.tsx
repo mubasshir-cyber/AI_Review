@@ -22,7 +22,7 @@ export const BusinessLogoOrIcon: React.FC<BusinessLogoOrIconProps> = ({
         src={logoUrl}
         alt={name || 'Business'}
         onError={() => setImageError(true)}
-        className={`${className} object-cover`}
+        className={`${className} object-contain`}
       />
     );
   }
