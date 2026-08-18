@@ -24,8 +24,9 @@ ON CONFLICT (id) DO NOTHING;
 -- 5. Seed Advertisements (Matching diagram: "Special Offer! Get 20% OFF on all services", "Boost Your Business")
 INSERT INTO advertisements (id, title, description, banner_bg_color, cta_text, cta_link, status, impressions, clicks)
 VALUES
-('ad-boost-1', '🚀 Boost Your Business with AI Reviews!', 'Get 3x more 5-star Google Reviews automatically with QR tabletop stands.', 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700', 'Learn More', 'https://tapreview.ai/growth', 'ACTIVE', 1240, 185),
-('ad-special-offer', '🎁 Special Offer! Get 20% OFF on all SaaS upgrades', 'Upgrade your business plan today and get unlimited AI review token generation.', 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600', 'Claim 20% Off', 'https://tapreview.ai/upgrade', 'ACTIVE', 980, 142)
+('ad-boost-1', '🚀 Boost Your Business with AI Reviews!', 'Get 3x more 5-star Google Reviews automatically with QR tabletop stands.', 'bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700', 'Inquire on WhatsApp', 'internal://whatsapp-enabled', 'ACTIVE', 1240, 185),
+('ad-special-offer', '🎁 Special Offer! Get 20% OFF on all SaaS upgrades', 'Upgrade your business plan today and get unlimited AI review token generation.', 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600', 'Inquire on WhatsApp', 'internal://whatsapp-enabled', 'ACTIVE', 980, 142);
+('ad-maintenance-notice', '🔧 Scheduled System Maintenance', 'Our platform will undergo brief routine updates tonight from 2:00 AM to 3:00 AM IST. Some services may experience brief interruptions.', 'bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700', 'Notice', 'internal://whatsapp-disabled', 'ACTIVE', 450, 12);
 ON CONFLICT (id) DO UPDATE SET title = EXCLUDED.title;
 
 -- 6. Seed Reviews (Commented out as there are no reviews currently seeded)
