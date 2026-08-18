@@ -149,6 +149,7 @@ export const AgencyPortal: React.FC = () => {
   const [adCtaText, setAdCtaText] = useState('');
   const [adCtaLink, setAdCtaLink] = useState('');
   const [adBgColor, setAdBgColor] = useState('bg-black');
+  const [showWhatsApp, setShowWhatsApp] = useState(true); // New state
 
   const loadAgencyData = async () => {
     try {
@@ -419,8 +420,12 @@ export const AgencyPortal: React.FC = () => {
     }
   };
 
+  // Add state for showWhatsApp in your component if you haven't already:
+
   const handleSaveAd = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Store the state directly inside ctaLink using our markers
+  const ctaLinkMarker = showWhatsApp ? 'internal://whatsapp-enabled' : 'internal://whatsapp-disabled';
     try {
       await fetchWithAuth('/api/ads', {
         method: 'POST',
@@ -429,7 +434,7 @@ export const AgencyPortal: React.FC = () => {
           title: adTitle,
           description: adDesc,
           ctaText: adCtaText,
-          ctaLink: adCtaLink,
+          ctaLink: ctaLinkMarker, // <--- Storing true/false state here          showWhatsApp: showWhatsApp, // <--- Included in payload
           bannerBgColor: 'bg-black',
           status: 'ACTIVE',
         }),
@@ -1644,44 +1649,59 @@ export const AgencyPortal: React.FC = () => {
 
           {/* TAB 4: PROMOTIONAL AD BANNERS */}
           {activeTab === 'ADS' && (
-            <div className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-lg font-extrabold text-[#1E293B]">Promotional Dashboard Banners</h3>
-                  <p className="text-xs text-[#64748B]">Broadcast upsells and announcements to business owners</p>
-                </div>
-                <button
-                  onClick={() => setIsAdModalOpen(true)}
-                  className="px-3.5 py-2 clay-btn-primary text-xs cursor-pointer flex items-center space-x-1.5"
-                >
-                  <Plus className="w-4 h-4 text-white" />
-                  <span>Create Banner Ad</span>
-                </button>
-              </div>
+  <div className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-6">
+    <div className="flex justify-between items-center">
+      <div>
+        <h3 className="text-lg font-extrabold text-[#1E293B]">Promotional Dashboard Banners</h3>
+        <p className="text-xs text-[#64748B]">Broadcast upsells and announcements to business owners</p>
+      </div>
+      <button
+        onClick={() => setIsAdModalOpen(true)}
+        className="px-3.5 py-2 clay-btn-primary text-xs cursor-pointer flex items-center space-x-1.5"
+      >
+        <Plus className="w-4 h-4 text-white" />
+        <span>Create Banner Ad</span>
+      </button>
+    </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {ads.map(ad => (
-                  <div key={ad.id} className="p-5 bg-[#EEF2F7] rounded-2xl border border-[#DCE3EC] relative space-y-2 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
-                    <button
-                      onClick={() => handleDeleteAd(ad.id)}
-                      className="absolute top-3 right-3 p-1.5 text-[#64748B] hover:text-[#EF4444] transition-colors cursor-pointer"
-                      title="Delete Ad"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                    <h4 className="font-extrabold text-base text-[#1E293B]">{ad.title}</h4>
-                    <p className="text-xs text-[#64748B]">{ad.description}</p>
-                    <div className="pt-2">
-                      <span className="inline-block px-3 py-1 bg-[#2563EB] text-white font-bold rounded-lg text-xs">
-                        {ad.ctaText}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {ads.map(ad => {
+        // Determine type based on our stored marker in cta_link
+        const isPromotional = ad.ctaLink !== 'internal://whatsapp-disabled';
+
+        return (
+          <div key={ad.id} className="p-5 bg-[#EEF2F7] rounded-2xl border border-[#DCE3EC] relative space-y-3 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
+            <button
+              onClick={() => handleDeleteAd(ad.id)}
+              className="absolute top-3 right-3 p-1.5 text-[#64748B] hover:text-[#EF4444] transition-colors cursor-pointer"
+              title="Delete Ad"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+
+            <div className="space-y-1">
+              {/* Professional Type Badge */}
+              <span className={`inline-block px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider ${
+                isPromotional 
+                  ? 'bg-[#2563EB]/10 text-[#2563EB]' 
+                  : 'bg-[#D97706]/10 text-[#D97706]'
+              }`}>
+                {isPromotional ? 'Promotional Announcement' : 'System Notice'}
+              </span>
+
+              <h4 className="font-extrabold text-base text-[#1E293B] pt-1">{ad.title}</h4>
+              <p className="text-xs text-[#64748B] leading-relaxed">{ad.description}</p>
             </div>
-          )}
 
+            <div className="pt-1 flex items-center justify-between text-[11px] text-[#64748B] font-medium border-t border-[#DCE3EC]/60">
+              <span>WhatsApp Enquiry: <strong className={isPromotional ? 'text-[#10B981]' : 'text-[#EF4444]'}>{isPromotional ? 'Enabled' : 'Disabled'}</strong></span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  </div>
+)}
           {/* TAB 5: AI ENGINE CONFIG */}
           {activeTab === 'AI_ENGINE' && (
             <form onSubmit={handleSaveAiConfig} className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-6">
@@ -2304,76 +2324,73 @@ export const AgencyPortal: React.FC = () => {
       </Modal>
 
       {/* CREATE AD BANNER MODAL */}
-      <Modal
-        isOpen={isAdModalOpen}
-        onClose={() => setIsAdModalOpen(false)}
-        title="Create Promotional Banner Ad"
-        subtitle="Displays on Business Owners' dashboards"
+<Modal
+  isOpen={isAdModalOpen}
+  onClose={() => setIsAdModalOpen(false)}
+  title="Create Promotional Banner Ad"
+  subtitle="Displays on Business Owners' dashboards"
+>
+  <form onSubmit={handleSaveAd} className="space-y-4">
+    <div>
+      <label className="block text-xs font-bold text-[#1E293B] mb-1">Banner Title</label>
+      <input
+        type="text"
+        required
+        value={adTitle}
+        onChange={e => setAdTitle(e.target.value)}
+        placeholder="e.g. System Maintenance Notice / Upgrade Offer"
+        className="w-full px-3.5 py-2.5 text-xs clay-input"
+      />
+    </div>
+    
+    <div>
+      <label className="block text-xs font-bold text-[#1E293B] mb-1">Message / Description</label>
+      <textarea
+        required
+        value={adDesc}
+        onChange={e => setAdDesc(e.target.value)}
+        placeholder="Brief description of the announcement or offer..."
+        rows={3}
+        className="w-full p-3.5 text-xs clay-input"
+      />
+    </div>
+
+    {/* NEW: Enable/Disable WhatsApp Button Toggle */}
+    <div className="flex items-center justify-between p-3.5 bg-[#F8FAFC] border border-[#DCE3EC] rounded-xl">
+      <div className="space-y-0.5">
+        <label className="text-xs font-bold text-[#1E293B] cursor-pointer" htmlFor="whatsapp-toggle">
+          Enable WhatsApp Enquiry Button
+        </label>
+        <p className="text-[11px] text-[#64748B]">
+          Turn off for informational notices (e.g. server maintenance updates).
+        </p>
+      </div>
+      <input
+        id="whatsapp-toggle"
+        type="checkbox"
+        checked={showWhatsApp}
+        onChange={e => setShowWhatsApp(e.target.checked)}
+        className="w-4 h-4 text-[#2563EB] rounded border-[#DCE3EC] focus:ring-[#2563EB] cursor-pointer"
+      />
+    </div>
+
+    <div className="pt-2 flex justify-end space-x-2">
+      <button
+        type="button"
+        onClick={() => setIsAdModalOpen(false)}
+        className="px-4 py-2.5 clay-btn-secondary text-xs"
       >
-        <form onSubmit={handleSaveAd} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-[#1E293B] mb-1">Banner Title</label>
-            <input
-              type="text"
-              required
-              value={adTitle}
-              onChange={e => setAdTitle(e.target.value)}
-              placeholder="e.g. Upgrade to Enterprise & Get 100k Tokens!"
-              className="w-full px-3.5 py-2.5 text-xs clay-input"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-[#1E293B] mb-1">Promotional Message</label>
-            <textarea
-              required
-              value={adDesc}
-              onChange={e => setAdDesc(e.target.value)}
-              placeholder="Brief description of the offer..."
-              rows={3}
-              className="w-full p-3.5 text-xs clay-input"
-            />
-          </div>
-
-          {/* <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-[#1E293B] mb-1">CTA Button Text</label>
-              <input
-                type="text"
-                required
-                value={adCtaText}
-                onChange={e => setAdCtaText(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs clay-input"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-[#1E293B] mb-1">CTA Target Link</label>
-              <input
-                type="text"
-                required
-                value={adCtaLink}
-                onChange={e => setAdCtaLink(e.target.value)}
-                className="w-full px-3.5 py-2.5 text-xs clay-input"
-              />
-            </div>
-          </div> */}
-
-          <div className="pt-2 flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={() => setIsAdModalOpen(false)}
-              className="px-4 py-2.5 clay-btn-secondary text-xs"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2.5 clay-btn-primary text-xs cursor-pointer"
-            >
-              Publish Banner Ad
-            </button>
-          </div>
-        </form>
-      </Modal>
+        Cancel
+      </button>
+      <button
+        type="submit"
+        className="px-4 py-2.5 clay-btn-primary text-xs cursor-pointer"
+      >
+        Publish Banner Ad
+      </button>
+    </div>
+  </form>
+</Modal>
 
       {/* EDIT PLAN MODAL */}
       <Modal
