@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Sparkles, LogOut, ShieldCheck, Building2, Home, QrCode, LogIn } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Modal } from './Modal';
 
 export const Navbar: React.FC = () => {
   const { user, currentBusiness, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
-  return (
+  return (<>
     <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-2.5 flex items-center justify-between sticky top-0 z-50 transition-all">
       {/* Brand Logo & Context */}
       <div className="flex items-center space-x-3 shrink-0">
@@ -109,12 +111,13 @@ export const Navbar: React.FC = () => {
               </div>
               <div className="hidden md:block w-px h-6 bg-slate-200 mr-1.5" />
               <button
-                onClick={logout}
-                title="Sign Out"
-                className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition-colors ml-auto md:ml-0"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
+  onClick={() => setIsLogoutModalOpen(true)}
+  title="Sign Out"
+  className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition-colors ml-auto md:ml-0"
+>
+  <LogOut className="w-3.5 h-3.5" />
+</button>
+
             </div>
           </div>
         ) : (
@@ -127,6 +130,36 @@ export const Navbar: React.FC = () => {
           </Link>
         )}
       </div>
-    </nav>
+    </nav><Modal
+  isOpen={isLogoutModalOpen}
+  onClose={() => setIsLogoutModalOpen(false)}
+  title="Confirm Sign Out"
+  subtitle="Are you sure you want to sign out of your account?"
+  maxWidth="max-w-sm"
+>
+  <div className="space-y-4">
+    <div className="flex space-x-3 pt-2">
+      <button
+        type="button"
+        onClick={() => setIsLogoutModalOpen(false)}
+        className="w-1/2 py-2.5 clay-btn-secondary text-xs cursor-pointer"
+      >
+        Cancel
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          setIsLogoutModalOpen(false);
+          logout();
+        }}
+        className="w-1/2 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+      >
+        Yes, Sign Out
+      </button>
+    </div>
+  </div>
+</Modal>
+    </>
   );
 };

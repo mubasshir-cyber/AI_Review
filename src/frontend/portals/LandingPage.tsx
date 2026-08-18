@@ -10,7 +10,7 @@ export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [email, setEmail] = useState('');
-  const [whatsappPhone, setWhatsappPhone] = useState('917400450167');
+  const [whatsappPhone, setWhatsappPhone] = useState('919930952947');
   const [showContact, setShowContact] = useState(false);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
 
@@ -40,18 +40,18 @@ export const LandingPage: React.FC = () => {
           setWhatsappPhone(data.data.supportPhone.replace(/[^0-9]/g, ''));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const getWhatsappUrl = (plan: Plan) => {
     const text = `Hello! I am interested in purchasing the *${plan.name}* plan ($${plan.priceMonthly}/mo) for ReviewScore AI. Features: Up to ${plan.maxBranches} branches & ${plan.monthlyTokens.toLocaleString()} AI tokens. Please share onboarding details!`;
-    const cleanNumber = whatsappPhone || '917400450167';
+    const cleanNumber = whatsappPhone || '919930952947';
     return `https://wa.me/${cleanNumber}?text=${encodeURIComponent(text)}`;
   };
 
   const handleContactWhatsApp = (e: React.MouseEvent) => {
     e.preventDefault();
-    const cleanNumber = whatsappPhone || '917400450167';
+    const cleanNumber = whatsappPhone || '919930952947';
     const message = encodeURIComponent('Hi! I want to enquire about setting up ReviewScore AI for my business.');
     window.open(`https://wa.me/${cleanNumber}?text=${message}`, '_blank');
   };
@@ -120,7 +120,7 @@ export const LandingPage: React.FC = () => {
             <div className="pt-4 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-500 font-medium">
               <span className="flex items-center space-x-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>Powered by Gemini AI</span>
+                <span>AI-Powered Review Generation</span>
               </span>
               <span className="flex items-center space-x-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -160,11 +160,10 @@ export const LandingPage: React.FC = () => {
                             setDemoReviewText('An outstanding experience! The staff was incredibly friendly and gentle throughout the visit.');
                           }
                         }}
-                        className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                          star <= demoRating
+                        className={`p-2 rounded-xl border transition-all cursor-pointer ${star <= demoRating
                             ? 'bg-amber-50 border-amber-300 text-amber-500'
                             : 'bg-slate-50 border-slate-200 text-slate-300'
-                        }`}
+                          }`}
                       >
                         <Star className={`w-5 h-5 ${star <= demoRating ? 'fill-amber-400 text-amber-400' : ''}`} />
                       </button>
@@ -181,11 +180,10 @@ export const LandingPage: React.FC = () => {
                         <button
                           key={tag}
                           onClick={() => toggleDemoTag(tag)}
-                          className={`text-xs px-3 py-1.5 rounded-lg font-medium border transition-all cursor-pointer ${
-                            isSel
+                          className={`text-xs px-3 py-1.5 rounded-lg font-medium border transition-all cursor-pointer ${isSel
                               ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
                               : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-slate-300'
-                          }`}
+                            }`}
                         >
                           {isSel ? '✓ ' : '+ '}
                           {tag}
@@ -201,11 +199,10 @@ export const LandingPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-slate-700 flex items-center space-x-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Gemini AI Generated Review</span>
+                    <span>AI Generated Review</span>
                   </span>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                    demoRating >= 4 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                  }`}>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${demoRating >= 4 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                    }`}>
                     {demoRating >= 4 ? 'Redirects to Google Maps' : 'Private Inbox Gatekeeper'}
                   </span>
                 </div>
@@ -271,9 +268,9 @@ export const LandingPage: React.FC = () => {
             <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold border border-blue-100">
               <Sparkles className="w-5 h-5" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">2. Gemini AI Assistant</h3>
+            <h3 className="text-lg font-bold text-slate-900">2. AI Assistant</h3>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Customers tap simple experience highlights. Gemini 3.6 Flash synthesizes structured, high-quality reviews instantly.
+              Customers tap simple experience highlights. AI synthesizes structured, high-quality reviews instantly.
             </p>
             <div className="pt-3 border-t border-slate-100 text-xs text-slate-700 space-y-2">
               <div className="flex items-center space-x-2 font-medium">
@@ -402,7 +399,7 @@ export const LandingPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch mt-4">
             {[
               {
-                title: 'Gemini AI Review Assistant',
+                title: 'AI Review Assistant',
                 desc: 'Generate authentic, detailed, and highly contextual reviews tailored to specific positive highlights selected by customers.',
                 icon: Sparkles,
                 color: 'text-blue-600 bg-blue-50 border-blue-100',
@@ -486,7 +483,7 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
       </section>
-        {/* </div>
+      {/* </div>
       </section> */}
 
       {/* FAQ SECTION */}
@@ -499,8 +496,8 @@ export const LandingPage: React.FC = () => {
         <div className="space-y-3">
           {[
             {
-              q: 'How does the Gemini AI review assistant formulate drafts?',
-              a: 'It reads the service highlights selected by the customer (like "Gentle Care" or "Great Vibes") along with any custom staff names, then calls Gemini AI to write a natural, grammatically correct 5-star review. Customers can edit the text before posting.'
+              q: 'How does the AI review assistant formulate drafts?',
+              a: 'It reads the service highlights selected by the customer (like "Gentle Care" or "Great Vibes") along with any custom staff names, then calls AI to write a natural, grammatically correct 5-star review. Customers can edit the text before posting.'
             },
             {
               q: 'What happens if a customer selects a low rating (1 to 3 stars)?',

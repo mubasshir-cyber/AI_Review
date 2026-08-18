@@ -17,7 +17,9 @@ import {
   ExternalLink, Settings, Tag, LayoutDashboard, Store, BarChart3, Lock, Globe, FileText,
   User, Menu, X, Loader2, ArrowRight, Share2, Sparkle, AlertCircle,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  EyeOff,
+  Eye
 } from 'lucide-react';
 import { CategorySearchDropdown } from '../components/CategorySearchDropdown';
 import { useLenisSmoothScroll } from '../hooks/useLenisSmoothScroll';
@@ -84,6 +86,7 @@ export const BusinessPortal: React.FC = () => {
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
   const [isVerifyPasswordModalOpen, setIsVerifyPasswordModalOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
+const [showCurrentPassword, setShowCurrentPassword] = useState(false);
 
   const bizId = currentBusiness?.id;
 
@@ -1477,43 +1480,66 @@ export const BusinessPortal: React.FC = () => {
 
       {/* PASSWORD VERIFICATION MODAL */}
       <Modal
-        isOpen={isVerifyPasswordModalOpen}
-        onClose={() => setIsVerifyPasswordModalOpen(false)}
-        title="Verify Current Password"
-        subtitle="To update your password, please confirm your identity by entering your current password."
-        maxWidth="max-w-md"
+  isOpen={isVerifyPasswordModalOpen}
+  onClose={() => setIsVerifyPasswordModalOpen(false)}
+  title="Verify Current Password"
+  subtitle="To update your password, please confirm your identity by entering your current password."
+  maxWidth="max-w-md"
+>
+  <form onSubmit={handleConfirmResetPassword} className="space-y-4">
+    <div>
+      <label className="block text-xs font-bold text-[#1E293B] mb-1">
+        Current Password
+      </label>
+
+      <div className="relative">
+        <input
+          type={showCurrentPassword ? "text" : "password"}
+          required
+          value={currentPassword}
+          onChange={e => setCurrentPassword(e.target.value)}
+          placeholder="Enter your current password"
+          className="w-full px-3.5 py-2.5 pr-10 text-xs clay-input"
+        />
+
+        <button
+          type="button"
+          onClick={() => setShowCurrentPassword(prev => !prev)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#1E293B] cursor-pointer"
+          aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+        >
+          {showCurrentPassword ? (
+            <EyeOff className="w-4 h-4" />
+          ) : (
+            <Eye className="w-4 h-4" />
+          )}
+        </button>
+      </div>
+    </div>
+
+    <div className="flex space-x-3 pt-2">
+      <button
+        type="button"
+        onClick={() => setIsVerifyPasswordModalOpen(false)}
+        className="w-1/2 py-2.5 clay-btn-secondary text-xs cursor-pointer"
       >
-        <form onSubmit={handleConfirmResetPassword} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold text-[#1E293B] mb-1">Current Password</label>
-            <input
-              type="password"
-              required
-              value={currentPassword}
-              onChange={e => setCurrentPassword(e.target.value)}
-              placeholder="Enter your current password"
-              className="w-full px-3.5 py-2.5 text-xs clay-input"
-            />
-          </div>
-          <div className="flex space-x-3 pt-2">
-            <button
-              type="button"
-              onClick={() => setIsVerifyPasswordModalOpen(false)}
-              className="w-1/2 py-2.5 clay-btn-secondary text-xs cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmittingPassword}
-              className="w-1/2 py-2.5 clay-btn-primary text-xs flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
-            >
-              {isSubmittingPassword && <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />}
-              <span>Confirm Reset</span>
-            </button>
-          </div>
-        </form>
-      </Modal>
+        Cancel
+      </button>
+
+      <button
+        type="submit"
+        disabled={isSubmittingPassword}
+        className="w-1/2 py-2.5 clay-btn-primary text-xs flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
+      >
+        {isSubmittingPassword && (
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+        )}
+        <span>Confirm Reset</span>
+      </button>
+    </div>
+  </form>
+</Modal>
+
 
       {/* EDIT/ADD BRANCH MODAL */}
       <Modal

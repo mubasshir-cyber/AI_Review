@@ -26,7 +26,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
           <h3 className="text-lg font-extrabold text-[#1E293B]">Empowering Local Businesses with Authentic Customer Reputation</h3>
           <p className="text-xs text-[#64748B] leading-relaxed">
             We believe happy customers want to support local businesses, but reviewer fatigue and writer's block get in the way.
-            ReviewScore AI removes every barrier, delivering a 10-second review experience powered by Google Gemini AI while safeguarding businesses from damaging unfair ratings.
+            ReviewScore AI removes every barrier, delivering a 10-second review experience powered while safeguarding businesses from damaging unfair ratings.
           </p>
         </div>
 
@@ -38,7 +38,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
               <div className="w-10 h-10 rounded-2xl bg-[#EEF2F7] border border-[#DCE3EC] flex items-center justify-center font-bold text-[#2563EB]">
                 <Sparkles className="w-5 h-5" />
               </div>
-              <h5 className="font-extrabold text-[#1E293B] text-xs">Google Gemini AI</h5>
+              <h5 className="font-extrabold text-[#1E293B] text-xs">ReviewScore AI</h5>
               <p className="text-[11px] text-[#64748B]">
                 Ultra-fast server-side AI model generating authentic 5-star reviews matching business voice in seconds.
               </p>
