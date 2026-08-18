@@ -464,7 +464,7 @@ export const CustomerPortal: React.FC = () => {
                 <Loader2 className="w-6 h-6 animate-spin text-[#2563EB]" />
               </div>
               <div>
-                <h3 className="text-base font-extrabold text-[#1E293B]">Formulating review with Gemini AI...</h3>
+                <h3 className="text-base font-extrabold text-[#1E293B]">Formulating review with ReviewScore AI...</h3>
                 <p className="text-xs text-[#64748B] mt-1">Drafting an authentic, detailed response</p>
               </div>
             </div>
@@ -605,6 +605,7 @@ export const CustomerPortal: React.FC = () => {
                   value={feedbackCategory}
                   onChange={e => setFeedbackCategory(e.target.value)}
                   className="w-full px-3.5 py-2.5 text-xs clay-input"
+                  required
                 >
                   <option value="" disabled>Select a suggestion keyword...</option>
                   {(activeBranch?.negativeTags && activeBranch.negativeTags.length > 0 

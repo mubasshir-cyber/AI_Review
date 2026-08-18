@@ -8,6 +8,13 @@ interface BannerAdProps {
 }
 
 export const BannerAd: React.FC<BannerAdProps> = ({ ad, onClose }) => {
+const removeEmojis = (text) => {
+  return text.replace(/\p{Extended_Pictographic}/gu, "");
+};
+  const message = `Hi! I'd like to inquire about your announcement: ${removeEmojis(ad.title)}`;
+
+  const whatsappUrl = `https://wa.me/919930952947?text=${encodeURIComponent(message)}`;
+
   return (
     <div className="relative p-6 clay-card bg-white border border-[#DCE3EC]">
       {onClose && (
@@ -28,14 +35,14 @@ export const BannerAd: React.FC<BannerAdProps> = ({ ad, onClose }) => {
           <h3 className="text-lg font-extrabold text-[#1E293B] tracking-tight">{ad.title}</h3>
           <p className="text-xs text-[#64748B] leading-relaxed">{ad.description}</p>
         </div>
+<a
+  href={whatsappUrl}
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-flex items-center justify-center space-x-2 px-5 py-2.5 clay-btn-primary text-xs shrink-0 cursor-pointer"
+>
+  <span>Inquire on WhatsApp</span>
 
-        <a
-          href={ad.ctaLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center space-x-2 px-5 py-2.5 clay-btn-primary text-xs shrink-0 cursor-pointer"
-        >
-          <span>{ad.ctaText || 'Learn More'}</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </a>
       </div>

@@ -90,7 +90,7 @@ export const AgencyPortal: React.FC = () => {
   // Agency Profile state
   const [agencyNameInput, setAgencyNameInput] = useState('ReviewScore AI Agency');
   const [agencyCategory, setAgencyCategory] = useState('SaaS & Digital Marketing Agency');
-  const [agencyPhone, setAgencyPhone] = useState('+91 99000 88776');
+  const [agencyPhone, setAgencyPhone] = useState('+91 99309 52947');
   const [agencyAddress, setAgencyAddress] = useState('500 Tech Park, Suite 100');
   const [agencyCity, setAgencyCity] = useState('Mumbai');
   const [agencyState, setAgencyState] = useState('Maharashtra');
@@ -2334,7 +2334,7 @@ export const AgencyPortal: React.FC = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          {/* <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-[#1E293B] mb-1">CTA Button Text</label>
               <input
@@ -2355,7 +2355,7 @@ export const AgencyPortal: React.FC = () => {
                 className="w-full px-3.5 py-2.5 text-xs clay-input"
               />
             </div>
-          </div>
+          </div> */}
 
           <div className="pt-2 flex justify-end space-x-2">
             <button

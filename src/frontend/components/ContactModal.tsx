@@ -13,7 +13,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
   isOpen,
   onClose,
   supportEmail = 'hello@reviewscore.ai',
-  supportPhone = '+91 98765 43210'
+  supportPhone = '+91 99309 52947'
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -35,7 +35,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({
     }, 2500);
   };
 
-  const whatsappClean = supportPhone.replace(/[^0-9]/g, '') || '917400450167';
+  const whatsappClean = supportPhone.replace(/[^0-9]/g, '') || '919930952947';
 
   return (
     <Modal

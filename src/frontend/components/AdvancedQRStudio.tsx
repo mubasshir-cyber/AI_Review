@@ -926,7 +926,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                   </div>
                   
                   <div className="bg-white p-2.5 rounded-xl border border-[#DCE3EC] shadow-sm w-full text-[8px] text-slate-500 text-left space-y-1">
-                    <p className="font-bold text-slate-700">Gemini AI Review Assistant:</p>
+                    <p className="font-bold text-slate-700">ReviewScore AI Assistant:</p>
                     <p className="italic bg-slate-50 p-1.5 rounded-lg border border-slate-100 leading-snug">
                       "Had a fantastic experience at {businessName}! The service was top-tier and the staff was super friendly. Highly recommend!"
                     </p>
