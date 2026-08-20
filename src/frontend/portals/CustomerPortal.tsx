@@ -294,36 +294,6 @@ export const CustomerPortal: React.FC = () => {
 
   return (
     <div className="bg-[#F5F7FB] flex flex-col items-center p-4 sm:p-6 font-sans">
-      
-      {/* Customer Demo Switcher Banner */}
-      {!isDirectLink && (
-        <div className="w-full max-w-lg mb-4 clay-card bg-white p-3 border border-[#DCE3EC] flex items-center justify-between gap-3 text-xs">
-          <div className="flex items-center space-x-2 text-[#1E293B] font-extrabold shrink-0">
-            <Building2 className="w-4 h-4 text-[#2563EB]" />
-            <span>Select Branch:</span>
-          </div>
-
-          <div className="relative flex-1">
-            <select
-              value={activeBranch?.id || ''}
-              onChange={(e) => handleBranchSelect(e.target.value)}
-              className="w-full appearance-none bg-[#EEF2F7] text-[#1E293B] font-bold px-3 py-1.5 pr-8 rounded-xl border border-[#DCE3EC] cursor-pointer text-xs focus:outline-none"
-            >
-              <option value="" disabled>Select a Business Branch to Demo</option>
-              <option value="branch-agency-main">🏢 ReviewScore AI Agency (Demo)</option>
-              {allBranches.filter(b => b.id !== 'branch-agency-main').map(b => {
-                const biz = allBusinesses.find(bz => bz.id === b.businessId);
-                return (
-                  <option key={b.id} value={b.id}>
-                    {biz ? `${biz.name} - ${b.name}` : b.name}
-                  </option>
-                );
-              })}
-            </select>
-            <ChevronDown className="w-3.5 h-3.5 text-[#64748B] absolute right-2.5 top-2.5 pointer-events-none" />
-          </div>
-        </div>
-      )}
 
       <div className="w-full max-w-lg clay-card bg-white overflow-hidden border border-[#DCE3EC]">
         {/* Header Branding with Centered Logo */}

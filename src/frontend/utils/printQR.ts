@@ -117,7 +117,7 @@ export function printQRCard(params: PrintQRCardParams) {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between;
+            justify-content: center;
             background: #ffffff;
           }
           .standee-card {
@@ -134,7 +134,8 @@ export function printQRCard(params: PrintQRCardParams) {
             height: 48px;
             max-width: 180px;
             object-fit: contain;
-            margin-bottom: 10px;
+            margin: 0 auto 10px auto;
+            display: block;
           }
           .business-badge {
             display: inline-block;
@@ -237,20 +238,6 @@ export function printQRCard(params: PrintQRCardParams) {
           <div style="width: 100%;">
             ${cardHtml}
           </div>
-
-          ${
-            isTableTent
-              ? `
-            <div class="fold-divider">
-              <span>✂️ FOLD HERE FOR STANDING TABLE TENT ✂️</span>
-            </div>
-
-            <div style="width: 100%; transform: rotate(180deg);">
-              ${cardHtml}
-            </div>
-          `
-              : ''
-          }
         </div>
 
       </body>

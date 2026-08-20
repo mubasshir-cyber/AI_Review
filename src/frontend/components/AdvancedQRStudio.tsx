@@ -6,8 +6,10 @@ import { printQRCard, downloadCardAsPNG } from '../utils/printQR';
 import {
   Download, QrCode, Printer, Sparkles, Image as ImageIcon, Upload,
   Palette, Layout, Layers, Copy, Check, FileText, Smartphone, Monitor, Loader2,
-  Star
+  Star, RefreshCw
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 interface AdvancedQRStudioProps {
   isOpen: boolean;
@@ -15,6 +17,7 @@ interface AdvancedQRStudioProps {
   branch: Branch | null;
   businessName?: string;
   logoUrl?: string;
+  onSaveSuccess?: () => void;
 }
 
 export const PRESET_QR_TEMPLATES: QrTemplate[] = [
@@ -121,17 +124,22 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
   onClose,
   branch,
   businessName = 'Smile Dental Clinic',
-  logoUrl = ''
+  logoUrl = '',
+  onSaveSuccess
 }) => {
   if (!branch) return null;
+
+  const { fetchWithAuth } = useAuth();
+  const { showToast } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
 
   const [activeTab, setActiveTab] = useState<'TEMPLATES' | 'DESIGN' | 'LOGO' | 'BRANDING' | 'EXPORT'>('TEMPLATES');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('tmpl-minimal');
   const [templates, setTemplates] = useState<QrTemplate[]>(PRESET_QR_TEMPLATES);
 
-  const [config, setConfig] = useState<QrConfig>(PRESET_QR_TEMPLATES[0].config);
-  const [currentLogo, setCurrentLogo] = useState<string>(logoUrl || '');
-  const [includeLogo, setIncludeLogo] = useState<boolean>(false);
+  const [config, setConfig] = useState<QrConfig>(branch.qrConfig || PRESET_QR_TEMPLATES[0].config);
+  const [currentLogo, setCurrentLogo] = useState<string>((branch.qrConfig && branch.qrConfig.logoUrl) || logoUrl || '');
+  const [includeLogo, setIncludeLogo] = useState<boolean>(!!(branch.qrConfig && branch.qrConfig.logoUrl));
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [previewMode, setPreviewMode] = useState<'TABLET' | 'MOBILE' | 'PRINT'>('TABLET');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -142,9 +150,78 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
 
   const reviewUrl = `${window.location.origin}/review/${branch.id}`;
 
+  // Sync state when branch updates
+  useEffect(() => {
+    if (branch) {
+      const initialConfig = branch.qrConfig || PRESET_QR_TEMPLATES[0].config;
+      setConfig(initialConfig);
+      setCurrentLogo(initialConfig.logoUrl || logoUrl || '');
+      setIncludeLogo(!!initialConfig.logoUrl);
+      setSelectedTemplateId(branch.qrConfig ? 'custom' : 'tmpl-minimal');
+    }
+  }, [branch, logoUrl]);
+
   useEffect(() => {
     generateBaseQR();
   }, [config, reviewUrl, includeLogo, currentLogo]);
+
+  const handleSaveCustomization = async () => {
+    setIsSaving(true);
+    try {
+      const qrConfig: QrConfig = {
+        ...config,
+        logoUrl: includeLogo ? currentLogo : undefined
+      };
+      
+      const res = await fetchWithAuth(`/api/branches/${branch.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ qrConfig })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast('QR Code customization saved successfully!', 'success');
+        if (onSaveSuccess) onSaveSuccess();
+      } else {
+        showToast(data.message || 'Failed to save customization.', 'error');
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('Network error while saving customization.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleResetCustomization = async () => {
+    if (!window.confirm('Are you sure you want to reset all QR code customizations to default?')) {
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const defaultConfig = PRESET_QR_TEMPLATES[0].config;
+      
+      const res = await fetchWithAuth(`/api/branches/${branch.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ qrConfig: null })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setConfig(defaultConfig);
+        setCurrentLogo(logoUrl || '');
+        setIncludeLogo(false);
+        setSelectedTemplateId('tmpl-minimal');
+        showToast('QR Code customization reset to default!', 'success');
+        if (onSaveSuccess) onSaveSuccess();
+      } else {
+        showToast(data.message || 'Failed to reset customization.', 'error');
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('Network error while resetting customization.', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const generateBaseQR = async () => {
     try {
@@ -445,8 +522,37 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        if (event.target?.result) {
-          setCurrentLogo(event.target.result as string);
+        const rawResult = event.target?.result as string;
+        if (rawResult) {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxDim = 250;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxDim || h > maxDim) {
+              if (w > h) {
+                h = Math.round((h * maxDim) / w);
+                w = maxDim;
+              } else {
+                w = Math.round((w * maxDim) / h);
+                h = maxDim;
+              }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(img, 0, 0, w, h);
+              const compressedDataUrl = canvas.toDataURL('image/png');
+              setCurrentLogo(compressedDataUrl);
+              setIncludeLogo(true);
+            } else {
+              setCurrentLogo(rawResult);
+              setIncludeLogo(true);
+            }
+          };
+          img.src = rawResult;
         }
       };
       reader.readAsDataURL(file);
@@ -559,7 +665,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-bold text-[#1E293B] mb-1">Foreground Color</label>
                   <div className="flex items-center space-x-2">
@@ -567,13 +673,13 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                       type="color"
                       value={config.fgColor}
                       onChange={e => setConfig({ ...config, fgColor: e.target.value })}
-                      className="w-8 h-8 cursor-pointer rounded-xl border border-[#DCE3EC]"
+                      className="w-10 h-10 cursor-pointer rounded-xl border border-[#DCE3EC] p-0 bg-transparent shrink-0"
                     />
                     <input
                       type="text"
                       value={config.fgColor}
                       onChange={e => setConfig({ ...config, fgColor: e.target.value })}
-                      className="flex-1 px-3.5 py-2 clay-input font-mono text-xs"
+                      className="flex-1 h-10 px-3.5 py-2 clay-input font-mono text-xs"
                     />
                   </div>
                 </div>
@@ -585,13 +691,13 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                       type="color"
                       value={config.bgColor}
                       onChange={e => setConfig({ ...config, bgColor: e.target.value })}
-                      className="w-8 h-8 cursor-pointer rounded-xl border border-[#DCE3EC]"
+                      className="w-10 h-10 cursor-pointer rounded-xl border border-[#DCE3EC] p-0 bg-transparent shrink-0"
                     />
                     <input
                       type="text"
                       value={config.bgColor}
                       onChange={e => setConfig({ ...config, bgColor: e.target.value })}
-                      className="flex-1 px-3.5 py-2 clay-input font-mono text-xs"
+                      className="flex-1 h-10 px-3.5 py-2 clay-input font-mono text-xs"
                     />
                   </div>
                 </div>
@@ -742,7 +848,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-bold text-[#1E293B] mb-1">Primary Theme Color</label>
                   <div className="flex items-center space-x-2">
@@ -750,13 +856,13 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                       type="color"
                       value={config.primaryColor}
                       onChange={e => setConfig({ ...config, primaryColor: e.target.value })}
-                      className="w-8 h-8 cursor-pointer rounded-xl border border-[#DCE3EC]"
+                      className="w-10 h-10 cursor-pointer rounded-xl border border-[#DCE3EC] p-0 bg-transparent shrink-0"
                     />
                     <input
                       type="text"
                       value={config.primaryColor}
                       onChange={e => setConfig({ ...config, primaryColor: e.target.value })}
-                      className="flex-1 px-3.5 py-2 clay-input font-mono text-xs"
+                      className="flex-1 h-10 px-3.5 py-2 clay-input font-mono text-xs"
                     />
                   </div>
                 </div>
@@ -768,13 +874,13 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                       type="color"
                       value={config.accentColor}
                       onChange={e => setConfig({ ...config, accentColor: e.target.value })}
-                      className="w-8 h-8 cursor-pointer rounded-xl border border-[#DCE3EC]"
+                      className="w-10 h-10 cursor-pointer rounded-xl border border-[#DCE3EC] p-0 bg-transparent shrink-0"
                     />
                     <input
                       type="text"
                       value={config.accentColor}
                       onChange={e => setConfig({ ...config, accentColor: e.target.value })}
-                      className="flex-1 px-3.5 py-2 clay-input font-mono text-xs"
+                      className="flex-1 h-10 px-3.5 py-2 clay-input font-mono text-xs"
                     />
                   </div>
                 </div>
@@ -849,6 +955,32 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
               </div>
             </div>
           )}
+
+          {/* Database persistence buttons */}
+          <div className="flex items-center space-x-3 pt-4 border-t border-[#E8EDF5]">
+            <button
+              type="button"
+              onClick={handleSaveCustomization}
+              disabled={isSaving}
+              className="flex-1 py-3 px-4 clay-btn-primary text-xs font-bold flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
+            >
+              {isSaving ? (
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+              ) : (
+                <Check className="w-4 h-4 text-white" />
+              )}
+              <span>{isSaving ? 'Saving...' : 'Save Customization'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleResetCustomization}
+              disabled={isSaving}
+              className="py-3 px-4 bg-[#EF4444] hover:bg-[#DC2626] text-white text-xs font-bold rounded-2xl flex items-center justify-center space-x-2 cursor-pointer shadow-md disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <RefreshCw className="w-4 h-4 text-white" />
+              <span>Reset Customization</span>
+            </button>
+          </div>
         </div>
 
         {/* Right Column: Live Interactive Card Preview (5 cols) */}
@@ -960,10 +1092,9 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
               </div>
             ) : (
               <div 
-                className="w-full max-w-[280px] rounded-3xl p-6 flex flex-col items-center text-center shadow-[inset_1px_1px_3px_rgba(255,255,255,0.9),4px_4px_12px_rgba(100,116,139,0.08)]"
+                className="w-full max-w-[280px] rounded-3xl p-6 flex flex-col items-center text-center shadow-[inset_1px_1px_3px_rgba(255,255,255,0.9),4px_4px_12px_rgba(100,116,139,0.08)] bg-white"
                 style={{ 
                   border: `3px solid ${config.primaryColor || '#2563EB'}`,
-                  backgroundColor: config.bgColor || '#FFFFFF'
                 }}
               >
                 {/* Header Badge */}
@@ -990,7 +1121,10 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
                 </p>
 
                 {/* QR Image with centered logo canvas output */}
-                <div className="mt-3 p-2 bg-white rounded-2xl border border-[#DCE3EC] shadow-[2px_2px_6px_rgba(100,116,139,0.06)]">
+                <div 
+                  className="mt-3 p-2 rounded-2xl border border-[#DCE3EC] shadow-[2px_2px_6px_rgba(100,116,139,0.06)]"
+                  style={{ backgroundColor: config.bgColor || '#FFFFFF' }}
+                >
                   {qrDataUrl ? (
                     <img src={qrDataUrl} alt="QR Scanner" className="w-44 h-44 object-contain" />
                   ) : (

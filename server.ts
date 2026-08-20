@@ -35,6 +35,10 @@ async function startServer() {
     credentials: true,
   });
 
+  // Body limit for JSON payloads (logos, base64 data)
+  nestApp.use(express.json({ limit: '10mb' }));
+  nestApp.use(express.urlencoded({ limit: '10mb', extended: true }));
+
   nestApp.setGlobalPrefix('api');
   nestApp.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   nestApp.useGlobalInterceptors(new ResponseInterceptor());

@@ -1131,26 +1131,26 @@ const [showCurrentPassword, setShowCurrentPassword] = useState(false);
           <div className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="text-lg font-extrabold text-[#1E293B]">Google Reviews History ({reviews.length})</h3>
+                <h3 className="text-lg font-extrabold text-[#1E293B]">Google Reviews Log</h3>
                 <p className="text-xs text-[#64748B]">Log of all AI generated 5-star reviews submitted by customers</p>
               </div>
 
-              <div className="flex items-center space-x-2">
-                <div className="relative">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:flex-initial">
                   <Search className="w-3.5 h-3.5 text-[#64748B] absolute left-3 top-2.5" />
                   <input
                     type="text"
                     value={searchReview}
                     onChange={e => setSearchReview(e.target.value)}
                     placeholder="Search reviews..."
-                    className="pl-8 pr-3.5 py-1.5 text-xs clay-input"
+                    className="w-full sm:w-auto pl-8 pr-3.5 py-1.5 text-xs clay-input"
                   />
                 </div>
 
                 <select
                   value={branchFilter}
                   onChange={e => setBranchFilter(e.target.value)}
-                  className="px-3 py-1.5 text-xs clay-input"
+                  className="w-full sm:w-auto px-3 py-1.5 text-xs clay-input"
                 >
                   <option value="ALL">All Branches</option>
                   {branches.map(b => (
@@ -1172,17 +1172,17 @@ const [showCurrentPassword, setShowCurrentPassword] = useState(false);
               <div className="divide-y divide-[#E8EDF5]">
                 {filteredReviews.map(r => (
                   <div key={r.id} className="py-4 space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                       <div className="flex items-center space-x-2">
                         <span className="font-extrabold text-[#1E293B] text-sm">{r.customerName || 'Anonymous Customer'}</span>
                         <span className="text-[#F59E0B] font-bold text-xs">{'★'.repeat(r.rating)}</span>
                       </div>
-                      <span className="text-[11px] text-[#64748B]">{new Date(r.createdAt).toLocaleDateString()}</span>
+                      <span className="text-[11px] text-[#64748B]">{new Date(r.createdAt).toLocaleDateString()}&nbsp; {new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                     </div>
 
                     <p className="text-xs text-[#1E293B] leading-relaxed font-medium">"{r.reviewText}"</p>
 
-                    <div className="flex items-center justify-between text-[11px] text-[#64748B] pt-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-[#64748B] pt-1 gap-2">
                       <div className="flex items-center space-x-2">
                         <span className="bg-[#EEF2F7] text-[#1E293B] px-2 py-0.5 border border-[#DCE3EC] rounded-md font-bold text-[10px]">{r.branchName}</span>
                         {r.serviceTags.map(t => (
@@ -1211,11 +1211,11 @@ const [showCurrentPassword, setShowCurrentPassword] = useState(false);
                 <p className="text-xs text-[#64748B]">Customer feedback below 4 stars intercepted and sent privately to management</p>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="w-full sm:w-auto">
                 <select
                   value={feedbackStatusFilter}
                   onChange={e => setFeedbackStatusFilter(e.target.value)}
-                  className="px-3 py-1.5 text-xs clay-input"
+                  className="w-full sm:w-auto px-3 py-1.5 text-xs clay-input"
                 >
                   <option value="ALL">All Statuses</option>
                   <option value="NEW">New Alerts</option>
@@ -1237,18 +1237,18 @@ const [showCurrentPassword, setShowCurrentPassword] = useState(false);
               <div className="space-y-4">
                 {filteredFeedback.map(f => (
                   <div key={f.id} className="p-4 bg-[#EEF2F7] rounded-2xl border border-[#DCE3EC] text-xs space-y-3 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                       <div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-extrabold text-[#1E293B] text-sm">{f.customerName}</span>
                           <span className="text-white font-bold bg-[#EF4444] px-2 py-0.5 rounded-full text-[10px]">
                             ★ {f.rating} Stars ({f.category})
                           </span>
                         </div>
-                        <p className="text-[#64748B] text-[11px] mt-0.5">{f.branchName} • {new Date(f.createdAt).toLocaleString()}</p>
+                        <p className="text-[#64748B] text-[11px] mt-0.5">{f.branchName} • {new Date(f.createdAt).toLocaleDateString()}&nbsp; {new Date(f.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</p>
                       </div>
 
-                      <div className="flex items-center space-x-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         {['NEW', 'IN_PROGRESS', 'RESOLVED'].map(st => (
                           <button
                             key={st}
@@ -1259,7 +1259,7 @@ const [showCurrentPassword, setShowCurrentPassword] = useState(false);
                                 : 'clay-btn-secondary'
                             }`}
                           >
-                            {st}
+                            {st === 'IN_PROGRESS' ? 'IN PROGRESS' : st}
                           </button>
                         ))}
                       </div>
@@ -1476,6 +1476,23 @@ const [showCurrentPassword, setShowCurrentPassword] = useState(false);
         branch={selectedBranchForQR}
         businessName={currentBusiness?.name}
         logoUrl={currentBusiness?.logoUrl}
+        onSaveSuccess={async () => {
+          if (bizId) {
+            try {
+              const res = await fetchWithAuth(`/api/branches?businessId=${bizId}`);
+              const json = await res.json();
+              if (res.ok && json.success) {
+                setBranches(json.data);
+                if (selectedBranchForQR) {
+                  const updated = json.data.find((b: Branch) => b.id === selectedBranchForQR.id);
+                  if (updated) setSelectedBranchForQR(updated);
+                }
+              }
+            } catch (err) {
+              console.error('Error reloading branches after QR save:', err);
+            }
+          }
+        }}
       />
 
       {/* PASSWORD VERIFICATION MODAL */}

@@ -13,42 +13,60 @@ export interface AiGenerationResult {
 export async function generateGoogleReview({
   businessName,
   category = "",
-  rating,
-  experience,
+  businessScale = "Solo",
+  businessType = "Local Business",
+  serviceHighlight = "",
+  rating = 5,
+  experience = "",
   keywords = [],
-  tone = "natural and friendly",
+  tone = "Subtle & Professional",
   length = "medium",
   location = "",
   language = "English",
+  previousReviews = [] as string[],
+}: {
+  businessName: string;
+  category?: string;
+  businessScale?: string;
+  businessType?: string;
+  serviceHighlight?: string;
+  rating?: number;
+  experience?: string;
+  keywords?: string[];
+  tone?: string;
+  length?: string;
+  location?: string;
+  language?: string;
+  previousReviews?: string[];
 }) {
-  const prompt = `
-Generate a natural-sounding Google review for the following business.
+  const previous_10_reviews_list = previousReviews.slice(-10).map((r, i) => `${i + 1}. "${r}"`).join("\n") || "None";
+  const highlightStr = serviceHighlight || keywords.join(", ") || "Great service and smooth communication";
 
-Business name: ${businessName}
-Business type / Industry: ${category || "Not specified"}
-Location: ${location || "Not specified"}
-Rating: ${rating}/5
-Customer experience: ${experience}
-Things to mention: ${keywords.join(", ") || "None"}
-Tone: ${tone}
-Length: ${length}
-Language: ${language}
+  const systemInstruction = `You are ReviewScore AI, a system designed to generate natural, authentic Google Maps reviews for businesses based on accurate context.
 
-Requirements:
-- Review should be 5 stars if rating is 5 stars and 1 star if rating is 1 star.
-- Review should be SEO Optimized, and AEO optimized
-- Review should be under 40 words, but one out of five reviews should be 50-70 words.
-- Write the review as if it were written by a real customer.
-- Do not sound like an advertisement.
-- Do not invent specific facts that were not provided.
-- Mention the business name naturally, but don't repeat it unnecessarily.
-- Match the sentiment to the rating.
-- Avoid excessive marketing language.
-- Do not use hashtags.
-- Return ONLY the review text.
-`;
+BUSINESS CONTEXT:
+- Name: ${businessName}
+- Category & Scale: ${businessScale} ${businessType || category}
+- Key Highlight: ${highlightStr}
+- Target Language: ${language}
 
-  const response = await fetch( "https://openrouter.ai/api/v1/chat/completions",
+STRICT WRITING RULES:
+1. MATCH SCALE TO REALITY: Never over-exaggerate. For a local agency/service, sound like a realistic satisfied client. Do NOT use grand phrases like "dream come true," "life-changing," "best in the world," or "miracle worker."
+2. NO HYPERBOLE: Express satisfaction through realistic outcomes (e.g., "got good leads," "great communication," "timely response," "good guidance") rather than emotional drama.
+3. NO EM-DASHES: Do not use "—" under any circumstances.
+4. LENGTH: Keep reviews to exactly 2 to 3 concise, natural-sounding sentences.
+5. NO DUPLICATION: Review the array of PREVIOUS_REVIEWS. You MUST use completely different sentence structures, vocabulary, tone, and focal points than those listed.
+
+LANGUAGE GUIDELINES:
+- If language is "English": Use natural conversational English with mild variation.
+- If language is "Roman Hindi": Write in authentic Hinglish as typed by real Indian users (e.g., "Inki digital marketing service kafi achhi hai. Response time fast hai aur work quality professional hai."). Do not use formal Devanagari Hindi or translated robotic phrases.
+
+PREVIOUS_REVIEWS TO AVOID:
+${previous_10_reviews_list}
+
+Generate ONE unique review now.`;
+
+  const response = await fetch("https://openrouter.ai/api/v1/chat/completions",
     {
       method: "POST",
       headers: {
@@ -58,14 +76,18 @@ Requirements:
         "X-OpenRouter-Title": "Google Review Generator",
       },
       body: JSON.stringify({
-        model: `${process.env.OPENROUTER_API_MODEL}`,
+        model: `${process.env.OPENROUTER_API_MODEL || 'google/gemini-2.5-flash-lite'}`,
         messages: [
           {
+            role: "system",
+            content: systemInstruction,
+          },
+          {
             role: "user",
-            content: prompt,
+            content: `Generate review for ${businessName}. Customer experience context: ${experience || 'Positive experience'}. Rating: ${rating}/5.`,
           },
         ],
-        temperature: 0.8,
+        temperature: 0.6,
       }),
     }
   );
