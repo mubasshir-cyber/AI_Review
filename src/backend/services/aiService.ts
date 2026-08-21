@@ -1,4 +1,3 @@
-
 import { db } from '../database/store';
 
 export interface AiGenerationResult {
@@ -11,7 +10,9 @@ export interface AiGenerationResult {
 }
 
 export async function generateGoogleReview({
-  businessName,
+  businessId,
+  branchId,
+  businessName = "",
   category = "",
   businessScale = "Solo",
   businessType = "Local Business",
@@ -25,7 +26,9 @@ export async function generateGoogleReview({
   language = "English",
   previousReviews = [] as string[],
 }: {
-  businessName: string;
+  businessId?: string;
+  branchId?: string;
+  businessName?: string;
   category?: string;
   businessScale?: string;
   businessType?: string;
@@ -35,33 +38,59 @@ export async function generateGoogleReview({
   keywords?: string[];
   tone?: string;
   length?: string;
+  language?:string;
   location?: string;
-  language?: string;
   previousReviews?: string[];
 }) {
-  const previous_10_reviews_list = previousReviews.slice(-10).map((r, i) => `${i + 1}. "${r}"`).join("\n") || "None";
+  // 1. Dynamic Database Lookup: Fetch business profile, AI grounding config & past reviews for this specific business
+  let groundingConfig = businessId ? await db.getAiGroundingConfig(businessId) : undefined;
+  let businessObj = businessId ? await db.getBusinessById(businessId) : undefined;
+  let pastDbReviews = businessId ? await db.getReviews(businessId, branchId) : [];
+
+  // Deduplication list: Combine past DB reviews for this business with any explicitly provided previous reviews
+  const existingReviewTexts = [
+    ...pastDbReviews.map(r => r.reviewText),
+    ...previousReviews
+  ].filter(Boolean);
+
+  const previous_10_reviews_list = existingReviewTexts.slice(-10).map((r, i) => `${i + 1}. "${r}"`).join("\n") || "None";
+
+  // Dynamic context resolution from ai_grounding_configs table & business table
+  const targetBizName = businessName || businessObj?.name || 'Business';
+  const targetCategory = category || businessObj?.category || 'General Service';
+  const targetScale = groundingConfig?.teamSize || businessScale || 'Solo / Freelancer (1)';
+  const targetLocationSetup = groundingConfig?.locationSetup || location || 'Physical Store / Office (In-person)';
+  const targetAge = groundingConfig?.businessAge || '1 - 3 Years';
+  const targetAudience = groundingConfig?.targetAudience || 'B2B';
+  const targetTone = groundingConfig?.toneEnthusiasm || tone || 'Subtle & Professional';
+
   const highlightStr = serviceHighlight || keywords.join(", ") || "Great service and smooth communication";
 
   const systemInstruction = `You are ReviewScore AI, a system designed to generate natural, authentic Google Maps reviews for businesses based on accurate context.
 
-BUSINESS CONTEXT:
-- Name: ${businessName}
-- Category & Scale: ${businessScale} ${businessType || category}
-- Key Highlight: ${highlightStr}
+BUSINESS CONTEXT & ANTI-HYPERBOLE GROUNDING (Fetched from ai_grounding_configs DB):
+- Name: ${targetBizName}
+- Category & Industry: ${targetCategory}
+- Team Size & Scale: ${targetScale}
+- Location Setup: ${targetLocationSetup}
+- Business Established: ${targetAge}
+- Target Audience: ${targetAudience}
+- Tone & Enthusiasm: ${targetTone}
+- Key Highlights / Service Tags: ${highlightStr}
 - Target Language: ${language}
 
 STRICT WRITING RULES:
-1. MATCH SCALE TO REALITY: Never over-exaggerate. For a local agency/service, sound like a realistic satisfied client. Do NOT use grand phrases like "dream come true," "life-changing," "best in the world," or "miracle worker."
-2. NO HYPERBOLE: Express satisfaction through realistic outcomes (e.g., "got good leads," "great communication," "timely response," "good guidance") rather than emotional drama.
+1. MATCH SCALE TO REALITY: Ground review in actual scale (${targetScale}). Never over-exaggerate. Sound like a realistic satisfied client of a ${targetCategory} business. Do NOT use grand hyperbole like "dream come true," "life-changing," "best in the world," or "miracle worker."
+2. NO HYPERBOLE: Express satisfaction through realistic outcomes (e.g., "got good leads," "great communication," "timely response," "good guidance," "clean facility") matching a ${targetTone} tone.
 3. NO EM-DASHES: Do not use "—" under any circumstances.
 4. LENGTH: Keep reviews to exactly 2 to 3 concise, natural-sounding sentences.
-5. NO DUPLICATION: Review the array of PREVIOUS_REVIEWS. You MUST use completely different sentence structures, vocabulary, tone, and focal points than those listed.
+5. BUSINESS-SPECIFIC DEDUPLICATION: Review the array of PREVIOUS_REVIEWS for this business. You MUST use completely different sentence structures, vocabulary, tone, and focal points than those listed.
 
 LANGUAGE GUIDELINES:
 - If language is "English": Use natural conversational English with mild variation.
-- If language is "Roman Hindi": Write in authentic Hinglish as typed by real Indian users (e.g., "Inki digital marketing service kafi achhi hai. Response time fast hai aur work quality professional hai."). Do not use formal Devanagari Hindi or translated robotic phrases.
+- If language is "Roman Hindi": Write in authentic Hinglish as typed by real Indian users (e.g., "Inki ${targetCategory} service kafi achhi hai. Response time fast hai aur work quality professional hai."). Do not use formal Devanagari Hindi or translated robotic phrases.
 
-PREVIOUS_REVIEWS TO AVOID:
+PREVIOUS_REVIEWS TO AVOID (Specific to Business ID: ${businessId || 'N/A'}):
 ${previous_10_reviews_list}
 
 Generate ONE unique review now.`;
@@ -84,7 +113,7 @@ Generate ONE unique review now.`;
           },
           {
             role: "user",
-            content: `Generate review for ${businessName}. Customer experience context: ${experience || 'Positive experience'}. Rating: ${rating}/5.`,
+            content: `Generate review for ${targetBizName}. Customer experience context: ${experience || 'Positive experience'}. Rating: ${rating}/5.`,
           },
         ],
         temperature: 0.6,
@@ -101,14 +130,15 @@ Generate ONE unique review now.`;
   const generatedReviewText = data.choices?.[0]?.message?.content?.trim() || "";
   const usage = data.usage || {};
   const modelName = process.env.OPENROUTER_API_MODEL || 'google/gemini-2.5-flash-lite';
-  const promptTokens = usage.prompt_tokens || Math.ceil(prompt.length / 4);
+  const promptTokens = usage.prompt_tokens || Math.ceil(systemInstruction.length / 4);
   const completionTokens = usage.completion_tokens || Math.ceil(generatedReviewText.length / 4);
   const totalTokens = usage.total_tokens || (promptTokens + completionTokens);
 
-  console.log(`\n✅ SUCCESS: AI Review generated using OpenRouter!`);
+  console.log(`\n✅ SUCCESS: AI Review generated dynamically for Business "${targetBizName}" (${businessId || 'N/A'})`);
+  console.log(`Grounding parameters applied: Scale=${targetScale}, Setup=${targetLocationSetup}, Tone=${targetTone}`);
   console.log(`Model Used: ${modelName}`);
   console.log(`Tokens Used: Total=${totalTokens} (Prompt=${promptTokens}, Completion=${completionTokens})`);
-  console.log(`Preview: "${generatedReviewText.substring(0, 50)}..."\n`);
+  console.log(`Preview: "${generatedReviewText.substring(0, 60)}..."\n`);
 
   return {
     reviewText: generatedReviewText,
@@ -119,4 +149,3 @@ Generate ONE unique review now.`;
     totalTokens,
   };
 }
-

@@ -12,7 +12,7 @@ import {
   ShieldCheck, Building2, CreditCard, Sparkles, Megaphone, Key, Sliders,
   Plus, Edit, Trash2, Search, CheckCircle2, DollarSign, Activity, Settings, RefreshCw,
   ArrowLeft, MapPin, Phone, ExternalLink, QrCode, Star, MessageSquare, Tag, Users, ChevronRight, Play, Loader2, Menu, X,
-  ChevronLeft
+  ChevronLeft, Eye, EyeOff
 } from 'lucide-react';
 import { CategorySearchDropdown } from '../components/CategorySearchDropdown';
 import { useLenisSmoothScroll } from '../hooks/useLenisSmoothScroll';
@@ -90,7 +90,7 @@ export const AgencyPortal: React.FC = () => {
 
   // Agency Profile state
   const [agencyNameInput, setAgencyNameInput] = useState('ReviewScore AI Agency');
-  const [agencyCategory, setAgencyCategory] = useState('SaaS & Digital Marketing Agency');
+  const [agencyCategory, setAgencyCategory] = useState('Digital Marketing Agency');
   const [agencyPhone, setAgencyPhone] = useState('+91 99309 52947');
   const [agencyAddress, setAgencyAddress] = useState('500 Tech Park, Suite 100');
   const [agencyCity, setAgencyCity] = useState('Mumbai');
@@ -115,6 +115,8 @@ export const AgencyPortal: React.FC = () => {
   const [bizCategory, setBizCategory] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
+  const [ownerPhone, setOwnerPhone] = useState('');
+  const [bizGoogleReviewUrl, setBizGoogleReviewUrl] = useState('');
   const [ownerPassword, setOwnerPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
@@ -125,7 +127,8 @@ export const AgencyPortal: React.FC = () => {
   const [supportedLangs, setSupportedLangs] = useState<string[]>(['English', 'Roman Hindi']);
   const [toneEnthusiasm, setToneEnthusiasm] = useState('Subtle & Professional (B2B/Medical)');
   const [businessAge, setBusinessAge] = useState('1 - 3 Years');
-  const [targetAudience, setTargetAudience] = useState('B2B');
+  const [targetAudience, setTargetAudience] = useState<string[]>(['B2B']);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Step 3: SaaS Subscription Plan & Quotas
   const [planId, setPlanId] = useState('plan-pro');
@@ -324,8 +327,24 @@ export const AgencyPortal: React.FC = () => {
     setBizModalError('');
 
     if (!bizName.trim()) { setBizModalError('Business Name is required.'); return; }
+    if (!bizCategory.trim()) { setBizModalError('Category is required.'); return; }
     if (!ownerName.trim()) { setBizModalError('Owner Name is required.'); return; }
     if (!ownerEmail.trim()) { setBizModalError('Owner Email is required.'); return; }
+
+    const cleanPhone = ownerPhone.trim().replace(/[\s\-]/g, '');
+    if (!cleanPhone) {
+      setBizModalError('Owner Phone Number is required.');
+      return;
+    }
+    if (!/^(?:\+91|0)?[6-9]\d{9}$/.test(cleanPhone)) {
+      setBizModalError('Please enter a valid 10-digit Indian phone number (e.g. 9876543210).');
+      return;
+    }
+
+    if (!bizGoogleReviewUrl.trim()) {
+      setBizModalError('Google Business Review Link is required.');
+      return;
+    }
 
     if (!editingBiz) {
       if (!ownerPassword.trim()) { setBizModalError('Password is required.'); return; }
@@ -339,9 +358,19 @@ export const AgencyPortal: React.FC = () => {
       ownerName: ownerName.trim(),
       ownerEmail: ownerEmail.trim(),
       password: ownerPassword.trim(),
+      phone: ownerPhone.trim(),
+      googleReviewUrl: bizGoogleReviewUrl.trim(),
       planId,
       branchLimit,
       monthlyTokenLimit: monthlyTokens,
+      aiGrounding: {
+        teamSize,
+        locationSetup,
+        businessAge,
+        targetAudience,
+        supportedLanguages: supportedLangs,
+        toneEnthusiasm,
+      }
     };
 
     try {
@@ -526,7 +555,7 @@ export const AgencyPortal: React.FC = () => {
     { id: 'BUSINESSES', label: 'Businesses & Hierarchy', icon: Building2 },
     { id: 'AGENCY_PROFILE', label: 'Agency Profile & Scanner', icon: QrCode },
     { id: 'DEMO', label: 'Demo Management', icon: Play },
-    { id: 'PLANS', label: 'SaaS Plans', icon: CreditCard },
+    { id: 'PLANS', label: 'Plans', icon: CreditCard },
     { id: 'ADS', label: 'Ad Banners', icon: Megaphone },
     { id: 'AI_ENGINE', label: 'AI Engine & Prompt', icon: Sparkles },
     { id: 'SETTINGS', label: 'Agency Settings', icon: Settings },
@@ -548,15 +577,17 @@ export const AgencyPortal: React.FC = () => {
     setBizCategory('');
     setOwnerName('');
     setOwnerEmail('');
+    setOwnerPhone('');
+    setBizGoogleReviewUrl('');
     setOwnerPassword('');
     setConfirmPassword('');
     setTeamSize('Solo / Freelancer (1)');
     setLocationSetup('Physical Store / Office (In-person)');
-    setKeyHighlightsInput('Digital Marketing, SEO, Fast Support');
     setSupportedLangs(['English', 'Roman Hindi']);
     setToneEnthusiasm('Subtle & Professional (B2B/Medical)');
     setBusinessAge('1 - 3 Years');
-    setTargetAudience('B2B');
+    setTargetAudience(['B2B']);
+    setShowPassword(false);
     setPlanId(plans[0]?.id || 'plan-pro');
     setBranchLimit(plans[0]?.maxBranches || 5);
     setMonthlyTokens(plans[0]?.monthlyTokens || 50000);
@@ -809,11 +840,29 @@ export const AgencyPortal: React.FC = () => {
                     setBizCategory(selectedBusiness.category || '');
                     setOwnerName(selectedBusiness.ownerName);
                     setOwnerEmail(selectedBusiness.ownerEmail);
+                    setOwnerPhone(selectedBusiness.phone || '');
+                    setBizGoogleReviewUrl(selectedBusiness.googleReviewUrl || '');
                     setOwnerPassword('');
                     setConfirmPassword('');
                     setPlanId(selectedBusiness.planId);
                     setBranchLimit(selectedBusiness.branchLimit);
                     setMonthlyTokens(selectedBusiness.monthlyTokenLimit);
+                    if (selectedBusiness.aiGrounding) {
+                      setTeamSize(selectedBusiness.aiGrounding.teamSize || 'Solo / Freelancer (1)');
+                      setLocationSetup(selectedBusiness.aiGrounding.locationSetup || 'Physical Store / Office (In-person)');
+                      setSupportedLangs(selectedBusiness.aiGrounding.supportedLanguages || ['English', 'Roman Hindi']);
+                      setToneEnthusiasm(selectedBusiness.aiGrounding.toneEnthusiasm || 'Subtle & Professional (B2B/Medical)');
+                      setBusinessAge(selectedBusiness.aiGrounding.businessAge || '1 - 3 Years');
+                      const audVal = selectedBusiness.aiGrounding.targetAudience;
+                      if (Array.isArray(audVal)) {
+                        setTargetAudience(audVal);
+                      } else if (typeof audVal === 'string' && audVal.trim()) {
+                        setTargetAudience(audVal.split(',').map(s => s.trim()).filter(Boolean));
+                      } else {
+                        setTargetAudience(['B2B']);
+                      }
+                    }
+                    setOnboardingStep(1);
                     setIsBizModalOpen(true);
                   }}
                   className="px-4 py-2 bg-white border border-[#DCE3EC] rounded-xl text-[#1E293B] hover:bg-[#F7F9FC] flex items-center justify-center space-x-2 text-xs sm:text-sm font-semibold"
@@ -1181,7 +1230,7 @@ export const AgencyPortal: React.FC = () => {
                 <StatCard
                   title="Total Client Businesses"
                   value={stats?.totalBusinesses || 0}
-                  subtitle="Active SaaS Subscriptions"
+                  subtitle="Active Subscriptions"
                   icon={Building2}
                   iconBgColor="bg-[#EEF2F7]"
                   iconColor="text-[#2563EB]"
@@ -1204,7 +1253,7 @@ export const AgencyPortal: React.FC = () => {
                   iconColor="text-[#2563EB]"
                 />
                 <StatCard
-                  title="Monthly SaaS Revenue"
+                  title="Monthly Revenue"
                   value={`$${stats?.monthlyRevenue || 297}`}
                   subtitle="Recurring Billing"
                   icon={DollarSign}
@@ -1218,7 +1267,7 @@ export const AgencyPortal: React.FC = () => {
               <div className="clay-card bg-white p-4 sm:p-6 border border-[#DCE3EC] space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
-                    <h3 className="text-sm sm:text-base font-extrabold text-[#1E293B]">Onboarded SaaS Businesses</h3>
+                    <h3 className="text-sm sm:text-base font-extrabold text-[#1E293B]">Onboarded Businesses</h3>
                     <p className="text-[11px] sm:text-xs text-[#64748B]">Click any business to inspect its branches, QR codes, and review activity.</p>
                   </div>
                   <span className="text-xs font-extrabold text-[#2563EB] bg-[#EEF2F7] px-3 py-1 rounded-full border border-[#DCE3EC] shrink-0 self-start sm:self-auto whitespace-nowrap">
@@ -1279,7 +1328,7 @@ export const AgencyPortal: React.FC = () => {
                       <tr>
                         <th>Business Name</th>
                         <th>Owner Contact</th>
-                        <th>SaaS Plan</th>
+                        <th>Plan</th>
                         <th>Branch Quota</th>
                         <th>Monthly Tokens Used</th>
                         <th>Status</th>
@@ -1506,11 +1555,28 @@ export const AgencyPortal: React.FC = () => {
                                 setBizCategory(b.category || '');
                                 setOwnerName(b.ownerName);
                                 setOwnerEmail(b.ownerEmail);
+                                setOwnerPhone(b.phone || '');
+                                setBizGoogleReviewUrl(b.googleReviewUrl || '');
                                 setOwnerPassword('');
                                 setConfirmPassword('');
                                 setPlanId(b.planId);
                                 setBranchLimit(b.branchLimit);
                                 setMonthlyTokens(b.monthlyTokenLimit);
+                                if (b.aiGrounding) {
+                                  setTeamSize(b.aiGrounding.teamSize || 'Solo / Freelancer (1)');
+                                  setLocationSetup(b.aiGrounding.locationSetup || 'Physical Store / Office (In-person)');
+                                  setSupportedLangs(b.aiGrounding.supportedLanguages || ['English', 'Roman Hindi']);
+                                  setToneEnthusiasm(b.aiGrounding.toneEnthusiasm || 'Subtle & Professional (B2B/Medical)');
+                                  setBusinessAge(b.aiGrounding.businessAge || '1 - 3 Years');
+                                  const audVal = b.aiGrounding.targetAudience;
+                                  if (Array.isArray(audVal)) {
+                                    setTargetAudience(audVal);
+                                  } else if (typeof audVal === 'string' && audVal.trim()) {
+                                    setTargetAudience(audVal.split(',').map(s => s.trim()).filter(Boolean));
+                                  } else {
+                                    setTargetAudience(['B2B']);
+                                  }
+                                }
                                 setIsBizModalOpen(true);
                               }}
                               className="w-10 h-10 flex items-center justify-center bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 transition-colors"
@@ -1639,7 +1705,7 @@ export const AgencyPortal: React.FC = () => {
               <div className="mt-8 pt-8 border-t border-[#DCE3EC]">
                 <div className="mb-6">
                   <h3 className="text-lg font-extrabold text-[#1E293B]">Client Subscription Management</h3>
-                  <p className="text-xs text-[#64748B]">Upgrade or downgrade a specific client's active SaaS plan</p>
+                  <p className="text-xs text-[#64748B]">Upgrade or downgrade a specific client's active plan</p>
                 </div>
 
                 <form
@@ -1690,7 +1756,7 @@ export const AgencyPortal: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-xs font-bold text-[#1E293B] mb-1">Select New SaaS Plan</label>
+                    <label className="block text-xs font-bold text-[#1E293B] mb-1">Select New Plan</label>
                     <div className="relative">
                       <select
                         value={subManagePlanId || (plans.length > 0 ? plans[0].id : '')}
@@ -2093,8 +2159,8 @@ export const AgencyPortal: React.FC = () => {
       <Modal
         isOpen={isBizModalOpen}
         onClose={() => setIsBizModalOpen(false)}
-        title={editingBiz ? 'Edit Client Business Settings' : 'Onboard New SaaS Business'}
-        subtitle="3-Step SaaS Onboarding & Anti-Hyperbole AI Grounding"
+        title={editingBiz ? 'Edit Client Business Settings' : 'Onboard New Business'}
+        subtitle="3-Step Onboarding & Anti-Hyperbole AI Grounding"
       >
         {/* Step Indicator Visualizer */}
         <div className="mb-6">
@@ -2211,6 +2277,31 @@ export const AgencyPortal: React.FC = () => {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Owner Phone Number <span className="text-red-500">*</span></label>
+                  <input
+                    type="tel"
+                    required
+                    value={ownerPhone}
+                    onChange={e => setOwnerPhone(e.target.value)}
+                    placeholder="e.g. +91 98765 43210"
+                    className="w-full px-3.5 py-2.5 text-xs clay-input"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Google Business Review Link <span className="text-red-500">*</span></label>
+                  <input
+                    type="url"
+                    required
+                    value={bizGoogleReviewUrl}
+                    onChange={e => setBizGoogleReviewUrl(e.target.value)}
+                    placeholder="https://search.google.com/local/writereview?placeid=..."
+                    className="w-full px-3.5 py-2.5 text-xs clay-input"
+                  />
+                </div>
+              </div>
+
               <div className="p-4 bg-[#EEF2F7] rounded-2xl border border-[#DCE3EC] space-y-2 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-extrabold text-[#1E293B]">
@@ -2225,25 +2316,45 @@ export const AgencyPortal: React.FC = () => {
                     <label className="block text-[11px] font-bold text-[#1E293B] mb-1">
                       {editingBiz ? 'New Password' : 'Set Password'}
                     </label>
-                    <input
-                      type="password"
-                      required={!editingBiz}
-                      value={ownerPassword}
-                      onChange={e => setOwnerPassword(e.target.value)}
-                      placeholder={editingBiz ? 'Enter new password...' : 'Min 6 characters'}
-                      className="w-full px-3.5 py-2.5 text-xs clay-input"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required={!editingBiz}
+                        value={ownerPassword}
+                        onChange={e => setOwnerPassword(e.target.value)}
+                        placeholder={editingBiz ? 'Enter new password...' : 'Min 6 characters'}
+                        className="w-full px-3.5 py-2.5 pr-10 text-xs clay-input"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                        title={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-[#1E293B] mb-1">Confirm Password</label>
-                    <input
-                      type="password"
-                      required={!editingBiz}
-                      value={confirmPassword}
-                      onChange={e => setConfirmPassword(e.target.value)}
-                      placeholder="Re-enter password"
-                      className="w-full px-3.5 py-2.5 text-xs clay-input"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required={!editingBiz}
+                        value={confirmPassword}
+                        onChange={e => setConfirmPassword(e.target.value)}
+                        placeholder="Re-enter password"
+                        className="w-full px-3.5 py-2.5 pr-10 text-xs clay-input"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                        title={showPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2325,36 +2436,49 @@ export const AgencyPortal: React.FC = () => {
 
                 {/* Target Audience */}
                 <div>
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Target Audience</label>
+                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Target Audience (Multi-Select)</label>
                   <div className="flex gap-2">
-                    {['B2B', 'B2C', 'D2C'].map(aud => (
-                      <button
-                        key={aud}
-                        type="button"
-                        onClick={() => setTargetAudience(aud)}
-                        className={`flex-1 py-2.5 text-xs font-bold rounded-xl border transition-all ${
-                          targetAudience === aud
-                            ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                        }`}
-                      >
-                        {aud}
-                      </button>
-                    ))}
+                    {['B2B', 'B2C', 'D2C', 'All'].map(aud => {
+                      const isSelected = aud === 'All'
+                        ? ['B2B', 'B2C', 'D2C'].every(a => targetAudience.includes(a))
+                        : targetAudience.includes(aud);
+
+                      return (
+                        <button
+                          key={aud}
+                          type="button"
+                          onClick={() => {
+                            if (aud === 'All') {
+                              if (isSelected) {
+                                setTargetAudience(['B2B']);
+                              } else {
+                                setTargetAudience(['B2B', 'B2C', 'D2C', 'All']);
+                              }
+                            } else {
+                              if (targetAudience.includes(aud)) {
+                                const updated = targetAudience.filter(a => a !== aud && a !== 'All');
+                                setTargetAudience(updated.length > 0 ? updated : ['B2B']);
+                              } else {
+                                const next = [...targetAudience.filter(a => a !== 'All'), aud];
+                                if (['B2B', 'B2C', 'D2C'].every(a => next.includes(a))) {
+                                  next.push('All');
+                                }
+                                setTargetAudience(next);
+                              }
+                            }
+                          }}
+                          className={`flex-1 py-2.5 text-xs font-bold rounded-xl border transition-all ${
+                            isSelected
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                          }`}
+                        >
+                          {aud}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-              </div>
-
-              {/* Key Services / Highlights Tag Input */}
-              <div>
-                <label className="block text-xs font-bold text-[#1E293B] mb-1">Key Services / Highlights (Comma Separated)</label>
-                <input
-                  type="text"
-                  value={keyHighlightsInput}
-                  onChange={e => setKeyHighlightsInput(e.target.value)}
-                  placeholder="e.g. Digital Marketing, SEO, Fast Delivery, Gentle Care"
-                  className="w-full px-3.5 py-2.5 text-xs clay-input"
-                />
               </div>
 
               {/* Supported Languages */}
@@ -2491,6 +2615,22 @@ export const AgencyPortal: React.FC = () => {
                     if (!bizCategory.trim()) { setBizModalError('Category is required.'); return; }
                     if (!ownerName.trim()) { setBizModalError('Owner Name is required.'); return; }
                     if (!ownerEmail.trim()) { setBizModalError('Owner Email is required.'); return; }
+
+                    const cleanPhone = ownerPhone.trim().replace(/[\s\-]/g, '');
+                    if (!cleanPhone) {
+                      setBizModalError('Owner Phone Number is required.');
+                      return;
+                    }
+                    if (!/^(?:\+91|0)?[6-9]\d{9}$/.test(cleanPhone)) {
+                      setBizModalError('Please enter a valid 10-digit Indian phone number (e.g. 9876543210 or +91 9876543210).');
+                      return;
+                    }
+
+                    if (!bizGoogleReviewUrl.trim()) {
+                      setBizModalError('Google Business Review Link is required.');
+                      return;
+                    }
+
                     if (!editingBiz) {
                       if (!ownerPassword.trim()) { setBizModalError('Password is required.'); return; }
                       if (ownerPassword.length < 6) { setBizModalError('Password must be 6+ chars.'); return; }
@@ -2743,8 +2883,8 @@ export const AgencyPortal: React.FC = () => {
       <Modal
         isOpen={isPlanModalOpen}
         onClose={() => setIsPlanModalOpen(false)}
-        title={editingPlan ? 'Edit SaaS Plan' : 'Create New SaaS Plan'}
-        subtitle={editingPlan ? 'Modify plan limits, pricing, and features. Changes will automatically cascade to all businesses on this plan.' : 'Define new SaaS tier pricing, branch limits, and monthly AI token quota.'}
+        title={editingPlan ? 'Edit Plan' : 'Create New Plan'}
+        subtitle={editingPlan ? 'Modify plan limits, pricing, and features. Changes will automatically cascade to all businesses on this plan.' : 'Define new tier pricing, branch limits, and monthly AI token quota.'}
       >
         <form
           onSubmit={async (e) => {

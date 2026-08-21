@@ -3,7 +3,7 @@ import pg from 'pg';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import {
-  User, Business, Branch, Review, Feedback, Plan, Subscription, Advertisement, ApiKeyConfig, SystemSettings, TokenUsage, AiModel
+  User, Business, Branch, Review, Feedback, Plan, Subscription, Advertisement, ApiKeyConfig, SystemSettings, TokenUsage, AiModel, AiGroundingConfig
 } from '../../types';
 
 const connectionString = process.env.DATABASE_URL;
@@ -48,6 +48,28 @@ function mapUser(row: any): User {
   };
 }
 
+function mapAiGrounding(row: any): AiGroundingConfig {
+  let langs: string[] = ['English', 'Roman Hindi'];
+  if (Array.isArray(row.supported_languages)) {
+    langs = row.supported_languages;
+  } else if (typeof row.supported_languages === 'string') {
+    try { langs = JSON.parse(row.supported_languages); } catch (e) {}
+  }
+
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    teamSize: row.team_size || 'Solo / Freelancer (1)',
+    locationSetup: row.location_setup || 'Physical Store / Office (In-person)',
+    businessAge: row.business_age || '1 - 3 Years',
+    targetAudience: row.target_audience || 'B2B',
+    supportedLanguages: langs,
+    toneEnthusiasm: row.tone_enthusiasm || 'Subtle & Professional (B2B/Medical)',
+    createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
+    updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
+  };
+}
+
 function mapBusiness(row: any): Business {
   const monthlyTokenLimit = safeInt(row.monthly_token_limit || row.monthly_tokens, 50000);
   const tokensUsedThisMonth = safeInt(row.monthly_tokens_used ?? row.tokens_used_this_month, 0);
@@ -65,6 +87,7 @@ function mapBusiness(row: any): Business {
     phone: row.phone || undefined,
     address: row.address || undefined,
     website: row.website || undefined,
+    googleReviewUrl: row.google_review_url || undefined,
     description: row.description || undefined,
     workingHours: row.working_hours || undefined,
     category: row.category,
@@ -499,9 +522,57 @@ class DatabaseStore {
     return { business: updatedBiz, branch: updatedBranch };
   }
 
+  // AI Grounding Configs
+  async getAiGroundingConfig(businessId: string): Promise<AiGroundingConfig | undefined> {
+    try {
+      const res = await this.query('SELECT * FROM ai_grounding_configs WHERE business_id = $1', [businessId]);
+      if (res.rows && res.rows[0]) {
+        return mapAiGrounding(res.rows[0]);
+      }
+    } catch (e) {
+      // Table might not exist yet or running in memory mode
+    }
+    return undefined;
+  }
+
+  async upsertAiGroundingConfig(businessId: string, grounding: Partial<AiGroundingConfig>): Promise<AiGroundingConfig | undefined> {
+    const id = `gnd-${crypto.randomUUID().slice(0, 12)}`;
+    const teamSize = grounding.teamSize || 'Solo / Freelancer (1)';
+    const locationSetup = grounding.locationSetup || 'Physical Store / Office (In-person)';
+    const businessAge = grounding.businessAge || '1 - 3 Years';
+    const targetAudience = Array.isArray(grounding.targetAudience)
+      ? grounding.targetAudience.join(', ')
+      : (grounding.targetAudience || 'B2B');
+    const supportedLangs = JSON.stringify(grounding.supportedLanguages || ['English', 'Roman Hindi']);
+    const toneEnthusiasm = grounding.toneEnthusiasm || 'Subtle & Professional (B2B/Medical)';
+
+    try {
+      await this.query(
+        `INSERT INTO ai_grounding_configs (id, business_id, team_size, location_setup, business_age, target_audience, supported_languages, tone_enthusiasm, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
+         ON CONFLICT (business_id) DO UPDATE SET
+           team_size = EXCLUDED.team_size,
+           location_setup = EXCLUDED.location_setup,
+           business_age = EXCLUDED.business_age,
+           target_audience = EXCLUDED.target_audience,
+           supported_languages = EXCLUDED.supported_languages,
+           tone_enthusiasm = EXCLUDED.tone_enthusiasm,
+           updated_at = CURRENT_TIMESTAMP`,
+        [id, businessId, teamSize, locationSetup, businessAge, targetAudience, supportedLangs, toneEnthusiasm]
+      );
+      return this.getAiGroundingConfig(businessId);
+    } catch (e) {
+      console.warn('upsertAiGroundingConfig error:', e);
+      return undefined;
+    }
+  }
+
   async getBusinessById(id: string): Promise<Business | undefined> {
     const res = await this.query('SELECT * FROM businesses WHERE id = $1', [id]);
-    return res.rows[0] ? mapBusiness(res.rows[0]) : undefined;
+    if (!res.rows[0]) return undefined;
+    const biz = mapBusiness(res.rows[0]);
+    biz.aiGrounding = await this.getAiGroundingConfig(biz.id);
+    return biz;
   }
 
   async getBusinessByOwnerId(ownerId: string): Promise<Business | undefined> {
@@ -509,7 +580,10 @@ class DatabaseStore {
       'SELECT * FROM businesses WHERE owner_id = $1 OR owner_email = (SELECT email FROM users WHERE id = $1) OR id = (SELECT business_id FROM users WHERE id = $1)',
       [ownerId]
     );
-    return res.rows[0] ? mapBusiness(res.rows[0]) : undefined;
+    if (!res.rows[0]) return undefined;
+    const biz = mapBusiness(res.rows[0]);
+    biz.aiGrounding = await this.getAiGroundingConfig(biz.id);
+    return biz;
   }
 
   async createBusinessWithAccount(params: {
@@ -517,11 +591,14 @@ class DatabaseStore {
     ownerName: string;
     ownerEmail: string;
     password: string;
+    phone?: string;
+    googleReviewUrl?: string;
     category?: string;
     planId?: string;
     logoUrl?: string;
     branchLimit?: number;
     monthlyTokenLimit?: number;
+    aiGrounding?: Partial<AiGroundingConfig>;
   }): Promise<{ business: Business; user: User }> {
     const cleanEmail = params.ownerEmail.trim().toLowerCase();
     const hashedPassword = bcrypt.hashSync(params.password, 10);
@@ -548,7 +625,8 @@ class DatabaseStore {
         ownerName: params.ownerName,
         ownerEmail: cleanEmail,
         logoUrl: params.logoUrl || undefined,
-        phone: undefined,
+        phone: params.phone || undefined,
+        googleReviewUrl: params.googleReviewUrl || undefined,
         address: undefined,
         website: undefined,
         description: undefined,
@@ -565,12 +643,12 @@ class DatabaseStore {
 
       await client.query(
         `INSERT INTO businesses (
-          id, name, owner_id, owner_name, owner_email, logo_url, phone, address, website, description, working_hours, category,
+          id, name, owner_id, owner_name, owner_email, logo_url, phone, google_review_url, address, website, description, working_hours, category,
           plan_id, plan_name, branch_limit, monthly_token_limit, tokens_used_this_month, status, created_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
         [
           newBiz.id, newBiz.name, newBiz.ownerId, newBiz.ownerName, newBiz.ownerEmail, newBiz.logoUrl || null,
-          newBiz.phone || null, newBiz.address || null, newBiz.website || null, newBiz.description || null, newBiz.workingHours || null,
+          newBiz.phone || null, newBiz.googleReviewUrl || null, newBiz.address || null, newBiz.website || null, newBiz.description || null, newBiz.workingHours || null,
           newBiz.category, newBiz.planId, newBiz.planName, newBiz.branchLimit, newBiz.monthlyTokenLimit,
           newBiz.tokensUsedThisMonth, newBiz.status, newBiz.createdAt
         ]
@@ -591,9 +669,9 @@ class DatabaseStore {
           '',
           '',
           '',
-          '',
+          params.phone || '',
           null,
-          'https://search.google.com/local/writereview',
+          params.googleReviewUrl || 'https://search.google.com/local/writereview',
           JSON.stringify(['Friendly Staff', 'Clean Environment', 'Fast Service']),
           JSON.stringify(['Long Wait Time', 'Unclean Environment', 'Expensive']),
           0,
@@ -602,6 +680,34 @@ class DatabaseStore {
           createdAt
         ]
       );
+
+      // 4. Create AI Grounding config
+      if (params.aiGrounding) {
+        const gndId = `gnd-${crypto.randomUUID().slice(0, 12)}`;
+        await client.query(
+          `INSERT INTO ai_grounding_configs (id, business_id, team_size, location_setup, business_age, target_audience, supported_languages, tone_enthusiasm, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           ON CONFLICT (business_id) DO UPDATE SET
+             team_size = EXCLUDED.team_size,
+             location_setup = EXCLUDED.location_setup,
+             business_age = EXCLUDED.business_age,
+             target_audience = EXCLUDED.target_audience,
+             supported_languages = EXCLUDED.supported_languages,
+             tone_enthusiasm = EXCLUDED.tone_enthusiasm,
+             updated_at = CURRENT_TIMESTAMP`,
+          [
+            gndId,
+            bizId,
+            params.aiGrounding.teamSize || 'Solo / Freelancer (1)',
+            params.aiGrounding.locationSetup || 'Physical Store / Office (In-person)',
+            params.aiGrounding.businessAge || '1 - 3 Years',
+            params.aiGrounding.targetAudience || 'B2B',
+            JSON.stringify(params.aiGrounding.supportedLanguages || ['English', 'Roman Hindi']),
+            params.aiGrounding.toneEnthusiasm || 'Subtle & Professional (B2B/Medical)',
+            createdAt
+          ]
+        );
+      }
 
       await client.query('COMMIT');
 
@@ -614,6 +720,20 @@ class DatabaseStore {
         status: 'ACTIVE',
         createdAt,
       };
+
+      if (params.aiGrounding) {
+        newBiz.aiGrounding = {
+          id: `gnd-${bizId}`,
+          businessId: bizId,
+          teamSize: params.aiGrounding.teamSize || 'Solo / Freelancer (1)',
+          locationSetup: params.aiGrounding.locationSetup || 'Physical Store / Office (In-person)',
+          businessAge: params.aiGrounding.businessAge || '1 - 3 Years',
+          targetAudience: params.aiGrounding.targetAudience || 'B2B',
+          supportedLanguages: params.aiGrounding.supportedLanguages || ['English', 'Roman Hindi'],
+          toneEnthusiasm: params.aiGrounding.toneEnthusiasm || 'Subtle & Professional (B2B/Medical)',
+          createdAt,
+        };
+      }
 
       return { business: newBiz, user: createdUser };
     } catch (err) {
@@ -635,6 +755,7 @@ class DatabaseStore {
       ownerEmail: bizData.ownerEmail || 'owner@example.com',
       logoUrl: bizData.logoUrl || undefined,
       phone: bizData.phone || undefined,
+      googleReviewUrl: bizData.googleReviewUrl || undefined,
       address: bizData.address || undefined,
       website: bizData.website || undefined,
       description: bizData.description || undefined,
@@ -651,16 +772,20 @@ class DatabaseStore {
 
     await this.query(
       `INSERT INTO businesses (
-        id, name, owner_id, owner_name, owner_email, logo_url, phone, address, website, description, working_hours, category,
+        id, name, owner_id, owner_name, owner_email, logo_url, phone, google_review_url, address, website, description, working_hours, category,
         plan_id, plan_name, branch_limit, monthly_token_limit, tokens_used_this_month, status, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)`,
       [
         newBiz.id, newBiz.name, newBiz.ownerId, newBiz.ownerName, newBiz.ownerEmail, newBiz.logoUrl || null,
-        newBiz.phone || null, newBiz.address || null, newBiz.website || null, newBiz.description || null, newBiz.workingHours || null,
+        newBiz.phone || null, newBiz.googleReviewUrl || null, newBiz.address || null, newBiz.website || null, newBiz.description || null, newBiz.workingHours || null,
         newBiz.category, newBiz.planId, newBiz.planName, newBiz.branchLimit, newBiz.monthlyTokenLimit,
         newBiz.tokensUsedThisMonth, newBiz.status, newBiz.createdAt
       ]
     );
+
+    if (bizData.aiGrounding) {
+      newBiz.aiGrounding = await this.upsertAiGroundingConfig(newBiz.id, bizData.aiGrounding);
+    }
 
     const existingUser = await this.getUserByEmail(newBiz.ownerEmail);
     if (!existingUser) {
@@ -675,7 +800,7 @@ class DatabaseStore {
     return newBiz;
   }
 
-  async updateBusiness(id: string, updates: Partial<Business>): Promise<Business | null> {
+  async updateBusiness(id: string, updates: Partial<Business> & { aiGrounding?: Partial<AiGroundingConfig> }): Promise<Business | null> {
     const current = await this.getBusinessById(id);
     if (!current) return null;
 
@@ -684,14 +809,19 @@ class DatabaseStore {
       `UPDATE businesses SET
         name = $1, owner_name = $2, owner_email = $3, logo_url = $4, phone = $5, address = $6, website = $7, description = $8, working_hours = $9, category = $10,
         plan_id = $11, plan_name = $12, branch_limit = $13, monthly_token_limit = $14,
-        tokens_used_this_month = $15, status = $16
-      WHERE id = $17`,
+        tokens_used_this_month = $15, status = $16, google_review_url = $17
+      WHERE id = $18`,
       [
         updated.name, updated.ownerName, updated.ownerEmail, updated.logoUrl || null, updated.phone || null, updated.address || null, updated.website || null, updated.description || null, updated.workingHours || null, updated.category,
         updated.planId, updated.planName, updated.branchLimit, updated.monthlyTokenLimit,
-        updated.tokensUsedThisMonth, updated.status, id
+        updated.tokensUsedThisMonth, updated.status, updated.googleReviewUrl || null, id
       ]
     );
+
+    if (updates.aiGrounding) {
+      updated.aiGrounding = await this.upsertAiGroundingConfig(id, updates.aiGrounding);
+    }
+
     return updated;
   }
 

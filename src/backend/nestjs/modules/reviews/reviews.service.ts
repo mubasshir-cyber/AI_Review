@@ -73,6 +73,8 @@ export class ReviewsService {
     // 3. Call Gemini / OpenRouter AI Engine
     const tags = body.serviceTags || body.selectedTags || [];
     const aiResult = await generateGoogleReview({
+      businessId,
+      branchId,
       businessName: businessName || 'Business',
       category: category,
       location: branchName || '',

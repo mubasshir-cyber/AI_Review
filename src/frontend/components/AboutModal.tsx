@@ -13,7 +13,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
       isOpen={isOpen}
       onClose={onClose}
       title="About ReviewScore AI Platform"
-      subtitle="Next-Generation AI Reputation Management & Google Review Optimization SaaS"
+      subtitle="Next-Generation AI Reputation Management & Google Review Optimization"
       maxWidth="max-w-3xl"
     >
       <div className="space-y-6 text-xs text-[#1E293B] leading-relaxed">
@@ -32,7 +32,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose }) => {
 
         {/* Tech Stack Cards */}
         <div>
-          <h4 className="font-extrabold text-[#1E293B] text-sm mb-3">Enterprise-Grade SaaS Technology Architecture</h4>
+          <h4 className="font-extrabold text-[#1E293B] text-sm mb-3">Enterprise-Grade Technology Architecture</h4>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-5 clay-card bg-white border border-[#DCE3EC] space-y-2.5">
               <div className="w-10 h-10 rounded-2xl bg-[#EEF2F7] border border-[#DCE3EC] flex items-center justify-center font-bold text-[#2563EB]">

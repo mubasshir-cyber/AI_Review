@@ -42,11 +42,14 @@ export class BusinessesService {
     ownerName: string;
     ownerEmail: string;
     password: string;
+    phone?: string;
+    googleReviewUrl?: string;
     category?: string;
     planId?: string;
     logoUrl?: string;
     branchLimit?: number;
     monthlyTokenLimit?: number;
+    aiGrounding?: any;
   }) {
     if (!dto.name || !dto.name.trim()) {
       throw new BadRequestException('Business Name is required.');
@@ -75,11 +78,14 @@ export class BusinessesService {
       ownerName: dto.ownerName.trim(),
       ownerEmail: cleanEmail,
       password: dto.password.trim(),
+      phone: dto.phone,
+      googleReviewUrl: dto.googleReviewUrl,
       category: dto.category,
       planId: dto.planId,
       logoUrl: dto.logoUrl,
       branchLimit: dto.branchLimit,
       monthlyTokenLimit: dto.monthlyTokenLimit,
+      aiGrounding: dto.aiGrounding,
     });
 
     return {

@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import pg from 'pg';
 import bcrypt from 'bcryptjs';
-import { db } from './store';
+import { db } from './store.js';
 
 export async function runDatabaseMigrationsAndSeed() {
   console.log('----------------------------------------------------');

@@ -1358,7 +1358,7 @@ const [showCurrentPassword, setShowCurrentPassword] = useState(false);
           <div className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-extrabold text-[#1E293B]">Your SaaS Subscription & AI Tokens</h3>
+                <h3 className="text-lg font-extrabold text-[#1E293B]">Your Subscription & AI Tokens</h3>
                 <p className="text-xs text-[#64748B]">Managed by Agency Super Admin</p>
               </div>
               <span className="px-3 py-1 bg-[#EEF2F7] text-[#2563EB] rounded-full border border-[#DCE3EC] text-xs font-extrabold">
