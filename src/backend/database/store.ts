@@ -49,11 +49,16 @@ function mapUser(row: any): User {
 }
 
 function mapAiGrounding(row: any): AiGroundingConfig {
-  let langs: string[] = ['English', 'Roman Hindi'];
+  let langs: string[] = ['English', 'Hinglish'];
   if (Array.isArray(row.supported_languages)) {
-    langs = row.supported_languages;
+    langs = row.supported_languages.map((l: string) => l === 'Roman Hindi' ? 'Hinglish' : l);
   } else if (typeof row.supported_languages === 'string') {
-    try { langs = JSON.parse(row.supported_languages); } catch (e) {}
+    try {
+      const parsed = JSON.parse(row.supported_languages);
+      if (Array.isArray(parsed)) {
+        langs = parsed.map((l: string) => l === 'Roman Hindi' ? 'Hinglish' : l);
+      }
+    } catch (e) {}
   }
 
   return {
@@ -451,7 +456,13 @@ class DatabaseStore {
     }
     queryText += ' ORDER BY created_at DESC';
     const res = await this.query(queryText, params);
-    return res.rows.map(mapBusiness);
+    const list = res.rows.map(mapBusiness);
+    await Promise.all(
+      list.map(async (biz) => {
+        biz.aiGrounding = await this.getAiGroundingConfig(biz.id);
+      })
+    );
+    return list;
   }
 
   // ==========================================
@@ -543,7 +554,7 @@ class DatabaseStore {
     const targetAudience = Array.isArray(grounding.targetAudience)
       ? grounding.targetAudience.join(', ')
       : (grounding.targetAudience || 'B2B');
-    const supportedLangs = JSON.stringify(grounding.supportedLanguages || ['English', 'Roman Hindi']);
+    const supportedLangs = JSON.stringify((grounding.supportedLanguages || ['English', 'Hinglish']).map(l => l === 'Roman Hindi' ? 'Hinglish' : l));
     const toneEnthusiasm = grounding.toneEnthusiasm || 'Subtle & Professional (B2B/Medical)';
 
     try {
@@ -702,7 +713,7 @@ class DatabaseStore {
             params.aiGrounding.locationSetup || 'Physical Store / Office (In-person)',
             params.aiGrounding.businessAge || '1 - 3 Years',
             params.aiGrounding.targetAudience || 'B2B',
-            JSON.stringify(params.aiGrounding.supportedLanguages || ['English', 'Roman Hindi']),
+            JSON.stringify(params.aiGrounding.supportedLanguages || ['English', 'Hinglish']),
             params.aiGrounding.toneEnthusiasm || 'Subtle & Professional (B2B/Medical)',
             createdAt
           ]
@@ -729,7 +740,7 @@ class DatabaseStore {
           locationSetup: params.aiGrounding.locationSetup || 'Physical Store / Office (In-person)',
           businessAge: params.aiGrounding.businessAge || '1 - 3 Years',
           targetAudience: params.aiGrounding.targetAudience || 'B2B',
-          supportedLanguages: params.aiGrounding.supportedLanguages || ['English', 'Roman Hindi'],
+          supportedLanguages: params.aiGrounding.supportedLanguages || ['English', 'Hinglish'],
           toneEnthusiasm: params.aiGrounding.toneEnthusiasm || 'Subtle & Professional (B2B/Medical)',
           createdAt,
         };

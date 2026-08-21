@@ -88,7 +88,7 @@ STRICT WRITING RULES:
 
 LANGUAGE GUIDELINES:
 - If language is "English": Use natural conversational English with mild variation.
-- If language is "Roman Hindi": Write in authentic Hinglish as typed by real Indian users (e.g., "Inki ${targetCategory} service kafi achhi hai. Response time fast hai aur work quality professional hai."). Do not use formal Devanagari Hindi or translated robotic phrases.
+- If language is "Hinglish" or "Roman Hindi": Write in authentic Hinglish as typed by real Indian users (e.g., "Inki ${targetCategory} service kafi achhi hai. Response time fast hai aur work quality professional hai."). Do not use formal Devanagari Hindi or translated robotic phrases.
 
 PREVIOUS_REVIEWS TO AVOID (Specific to Business ID: ${businessId || 'N/A'}):
 ${previous_10_reviews_list}

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS ai_grounding_configs (
     location_setup VARCHAR(128) NOT NULL DEFAULT 'Physical Store / Office (In-person)',
     business_age VARCHAR(128) NOT NULL DEFAULT '1 - 3 Years',
     target_audience VARCHAR(64) NOT NULL DEFAULT 'B2B',
-    supported_languages JSONB NOT NULL DEFAULT '["English", "Roman Hindi"]'::jsonb,
+    supported_languages JSONB NOT NULL DEFAULT '["English", "Hinglish"]'::jsonb,
     tone_enthusiasm VARCHAR(128) NOT NULL DEFAULT 'Subtle & Professional (B2B/Medical)',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

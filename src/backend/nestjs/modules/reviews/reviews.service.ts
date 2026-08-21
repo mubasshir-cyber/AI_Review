@@ -18,6 +18,7 @@ export class ReviewsService {
     serviceTags?: string[];
     selectedTags?: string[];
     customNote?: string;
+    language?: string;
   }) {
     let branchId = body.branchId;
     let businessId: string | undefined;
@@ -83,7 +84,7 @@ export class ReviewsService {
       keywords: tags,
       tone: 'natural and friendly',
       length: 'medium',
-      language: 'English',
+      language: body.language || 'English',
     });
 
     // 4. Record Token Usage Transaction & Calculate Model Costs

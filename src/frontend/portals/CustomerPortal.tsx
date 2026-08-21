@@ -24,6 +24,7 @@ export const CustomerPortal: React.FC = () => {
   const [copied, setCopied] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isDirectLink, setIsDirectLink] = useState<boolean>(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
 
   // Low rating feedback form
   const [feedbackName, setFeedbackName] = useState<string>('');
@@ -144,13 +145,14 @@ export const CustomerPortal: React.FC = () => {
     }
   };
 
-  const handleGenerateAIReview = async () => {
+  const handleGenerateAIReview = async (targetLang: string = 'English') => {
     if (activeBusiness?.status === 'SUSPENDED' || activeBusiness?.status === 'INACTIVE') {
       setBlockedMessage('This business is currently unavailable.');
       setStep('BLOCKED');
       return;
     }
 
+    setSelectedLanguage(targetLang);
     setIsSubmitting(true);
     setStep('GENERATING');
 
@@ -163,6 +165,7 @@ export const CustomerPortal: React.FC = () => {
           rating,
           serviceTags: selectedTags,
           customNote,
+          language: targetLang,
         }),
       });
 
@@ -409,21 +412,76 @@ export const CustomerPortal: React.FC = () => {
                 />
               </div>
 
-              <div className="flex space-x-3 pt-2">
-                <button
-                  onClick={() => setStep('RATING')}
-                  className="w-1/3 py-2.5 px-3 clay-btn-secondary text-xs cursor-pointer"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={handleGenerateAIReview}
-                  className="w-2/3 py-2.5 px-4 clay-btn-primary flex items-center justify-center space-x-2 text-xs cursor-pointer"
-                >
-                  <Sparkles className="w-4 h-4 text-white" />
-                  <span>{rating >= 4 ? 'Generate AI Review' : 'Continue Feedback'}</span>
-                </button>
-              </div>
+              {/* Compute supported languages based on demo mode vs business config */}
+              {(() => {
+                const getSupportedLangs = (): string[] => {
+                  if (!isDirectLink) {
+                    return ['English', 'Hinglish'];
+                  }
+                  const rawLangs = activeBusiness?.aiGrounding?.supportedLanguages;
+                  if (Array.isArray(rawLangs) && rawLangs.length > 0) {
+                    const normalized = rawLangs.map(l => (l === 'Roman Hindi' ? 'Hinglish' : l));
+                    return Array.from(new Set(normalized));
+                  }
+                  return ['English'];
+                };
+
+                const currentSupportedLangs = getSupportedLangs();
+                const showEnglishBtn = currentSupportedLangs.includes('English');
+                const showHinglishBtn = currentSupportedLangs.includes('Hinglish');
+                const showBothLangBtns = showEnglishBtn && showHinglishBtn;
+
+                return (
+                  <div className="pt-2">
+                    {showBothLangBtns ? (
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <button
+                            onClick={() => handleGenerateAIReview('English')}
+                            className="py-3 px-3 clay-btn-primary flex items-center justify-center space-x-2 text-xs font-bold cursor-pointer"
+                          >
+                            <Sparkles className="w-4 h-4 text-white" />
+                            <span>Generate in English</span>
+                          </button>
+                          <button
+                            onClick={() => handleGenerateAIReview('Hinglish')}
+                            className="py-3 px-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-2xl font-bold shadow-md transition-all flex items-center justify-center space-x-2 text-xs cursor-pointer"
+                          >
+                            <Sparkles className="w-4 h-4 text-white" />
+                            <span>Generate in Hinglish</span>
+                          </button>
+                        </div>
+                        <button
+                          onClick={() => setStep('RATING')}
+                          className="w-full py-2 px-3 clay-btn-secondary text-xs cursor-pointer mt-1"
+                        >
+                          Back
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={() => setStep('RATING')}
+                          className="w-1/3 py-2.5 px-3 clay-btn-secondary text-xs cursor-pointer"
+                        >
+                          Back
+                        </button>
+                        <button
+                          onClick={() => handleGenerateAIReview(showHinglishBtn ? 'Hinglish' : 'English')}
+                          className="w-2/3 py-2.5 px-4 clay-btn-primary flex items-center justify-center space-x-2 text-xs cursor-pointer"
+                        >
+                          <Sparkles className="w-4 h-4 text-white" />
+                          <span>
+                            {rating >= 4
+                              ? `Generate in ${showHinglishBtn ? 'Hinglish' : 'English'}`
+                              : 'Continue Feedback'}
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )}
 
@@ -435,7 +493,7 @@ export const CustomerPortal: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-base font-extrabold text-[#1E293B]">Formulating review with ReviewScore AI...</h3>
-                <p className="text-xs text-[#64748B] mt-1">Drafting an authentic, detailed response</p>
+                <p className="text-xs text-[#64748B] mt-1">Drafting an authentic response in {selectedLanguage}</p>
               </div>
             </div>
           )}
