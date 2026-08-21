@@ -125,6 +125,15 @@ function mapBranch(row: any): Branch {
     try { negTags = JSON.parse(row.negative_tags); } catch (e) { negTags = []; }
   }
 
+  let qrConfig: any = undefined;
+  if (row.qr_config) {
+    if (typeof row.qr_config === 'string') {
+      try { qrConfig = JSON.parse(row.qr_config); } catch (e) {}
+    } else {
+      qrConfig = row.qr_config;
+    }
+  }
+
   return {
     id: row.id,
     businessId: row.business_id,
@@ -137,6 +146,7 @@ function mapBranch(row: any): Branch {
     googlePlaceId: row.google_place_id || undefined,
     googleReviewUrl: row.google_review_url,
     qrCodeUrl: row.qr_code_url || undefined,
+    qrConfig: qrConfig || undefined,
     serviceTags: tags,
     negativeTags: negTags,
     totalReviews: parseInt(row.total_reviews || 0),
@@ -744,8 +754,8 @@ class DatabaseStore {
       `INSERT INTO branches (
         id, business_id, name, address, city, state, zip_code, phone,
         google_place_id, google_review_url, qr_code_url, service_tags, negative_tags,
-        total_reviews, avg_rating, status, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)`,
+        total_reviews, avg_rating, status, created_at, qr_config
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
       [
         newBranch.id,
         newBranch.businessId,
@@ -763,7 +773,8 @@ class DatabaseStore {
         newBranch.totalReviews || 0,
         newBranch.avgRating || 5.0,
         newBranch.status || 'ACTIVE',
-        newBranch.createdAt
+        newBranch.createdAt,
+        newBranch.qrConfig ? JSON.stringify(newBranch.qrConfig) : null
       ]
     );
 
@@ -779,8 +790,9 @@ class DatabaseStore {
       `UPDATE branches SET
         name = $1, address = $2, city = $3, state = $4, zip_code = $5, phone = $6,
         google_place_id = $7, google_review_url = $8, qr_code_url = $9, service_tags = $10,
-        negative_tags = $11, total_reviews = $12, avg_rating = $13, status = $14
-      WHERE id = $15`,
+        negative_tags = $11, total_reviews = $12, avg_rating = $13, status = $14,
+        qr_config = $15
+      WHERE id = $16`,
       [
         updated.name,
         updated.address ?? '',
@@ -796,6 +808,7 @@ class DatabaseStore {
         updated.totalReviews || 0,
         updated.avgRating || 5.0,
         updated.status || 'ACTIVE',
+        updated.qrConfig ? JSON.stringify(updated.qrConfig) : null,
         id
       ]
     );
@@ -1071,9 +1084,9 @@ class DatabaseStore {
     if (res.rows.length === 0) {
       return {
         geminiApiKey: process.env.GEMINI_API_KEY || '',
-        primaryModel: 'gemini-1.5-flash',
-        promptTemplate: 'Write a high converting, realistic 5-star customer review.',
-        temperature: 0.7,
+        primaryModel: 'gemini-2.5-flash-lite',
+        promptTemplate: 'You are ReviewScore AI, a system designed to generate natural, authentic Google Maps reviews for businesses based on accurate context. Eliminate hyperbole and em-dashes.',
+        temperature: 0.6,
         isCustomKeyActive: true,
         updatedAt: new Date().toISOString(),
       };

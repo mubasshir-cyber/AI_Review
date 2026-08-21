@@ -11,7 +11,8 @@ import { DemoManagementTab } from '../components/DemoManagementTab';
 import {
   ShieldCheck, Building2, CreditCard, Sparkles, Megaphone, Key, Sliders,
   Plus, Edit, Trash2, Search, CheckCircle2, DollarSign, Activity, Settings, RefreshCw,
-  ArrowLeft, MapPin, Phone, ExternalLink, QrCode, Star, MessageSquare, Tag, Users, ChevronRight, Play, Loader2, Menu, X
+  ArrowLeft, MapPin, Phone, ExternalLink, QrCode, Star, MessageSquare, Tag, Users, ChevronRight, Play, Loader2, Menu, X,
+  ChevronLeft
 } from 'lucide-react';
 import { CategorySearchDropdown } from '../components/CategorySearchDropdown';
 import { useLenisSmoothScroll } from '../hooks/useLenisSmoothScroll';
@@ -104,15 +105,29 @@ export const AgencyPortal: React.FC = () => {
   const [selectedQrBranch, setSelectedQrBranch] = useState<Branch | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
-  // Business Onboard/Edit Modal
+  // Business Onboard/Edit Modal & 3-Step Wizard State
   const [isBizModalOpen, setIsBizModalOpen] = useState(false);
   const [editingBiz, setEditingBiz] = useState<Business | null>(null);
+  const [onboardingStep, setOnboardingStep] = useState<1 | 2 | 3>(1);
+
+  // Step 1: Account & Business Profile
   const [bizName, setBizName] = useState('');
   const [bizCategory, setBizCategory] = useState('');
   const [ownerName, setOwnerName] = useState('');
   const [ownerEmail, setOwnerEmail] = useState('');
   const [ownerPassword, setOwnerPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Step 2: AI Review Grounding (Anti-Hyperbole Engine)
+  const [teamSize, setTeamSize] = useState('Solo / Freelancer (1)');
+  const [locationSetup, setLocationSetup] = useState('Physical Store / Office (In-person)');
+  const [keyHighlightsInput, setKeyHighlightsInput] = useState('Digital Marketing, SEO, Fast Support');
+  const [supportedLangs, setSupportedLangs] = useState<string[]>(['English', 'Roman Hindi']);
+  const [toneEnthusiasm, setToneEnthusiasm] = useState('Subtle & Professional (B2B/Medical)');
+  const [businessAge, setBusinessAge] = useState('1 - 3 Years');
+  const [targetAudience, setTargetAudience] = useState('B2B');
+
+  // Step 3: SaaS Subscription Plan & Quotas
   const [planId, setPlanId] = useState('plan-pro');
   const [branchLimit, setBranchLimit] = useState(5);
   const [monthlyTokens, setMonthlyTokens] = useState(50000);
@@ -127,9 +142,9 @@ export const AgencyPortal: React.FC = () => {
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [editPlanName, setEditPlanName] = useState('');
-  const [editPlanPrice, setEditPlanPrice] = useState(0);
-  const [editPlanBranches, setEditPlanBranches] = useState(1);
-  const [editPlanTokens, setEditPlanTokens] = useState(10000);
+  const [editPlanPrice, setEditPlanPrice] = useState<number | string>(0);
+  const [editPlanBranches, setEditPlanBranches] = useState<number | string>(1);
+  const [editPlanTokens, setEditPlanTokens] = useState<number | string>(10000);
 
   // Add Branch Modal
   const [isBranchModalOpen, setIsBranchModalOpen] = useState(false);
@@ -420,6 +435,23 @@ export const AgencyPortal: React.FC = () => {
     }
   };
 
+  const handleDeletePlan = async (planId: string, planName: string) => {
+    if (!confirm(`Are you sure you want to delete the plan "${planName}"?`)) return;
+    try {
+      const res = await fetchWithAuth(`/api/plans/${planId}`, { method: 'DELETE' });
+      if (res.ok) {
+        showToast(`Plan ${planName} deleted!`);
+        loadAgencyData();
+      } else {
+        const err = await res.json();
+        alert(err.message || 'Failed to delete plan');
+      }
+    } catch (e) {
+      console.error(e);
+      showToast('Error deleting plan', 'error');
+    }
+  };
+
   // Add state for showWhatsApp in your component if you haven't already:
 
   const handleSaveAd = async (e: React.FormEvent) => {
@@ -510,14 +542,24 @@ export const AgencyPortal: React.FC = () => {
 
   const handleOnboardClick = () => {
     setEditingBiz(null);
+    setOnboardingStep(1);
+    setBizModalError('');
     setBizName('');
     setBizCategory('');
     setOwnerName('');
     setOwnerEmail('');
     setOwnerPassword('');
-    setPlanId('plan-pro');
-    setBranchLimit(5);
-    setMonthlyTokens(50000);
+    setConfirmPassword('');
+    setTeamSize('Solo / Freelancer (1)');
+    setLocationSetup('Physical Store / Office (In-person)');
+    setKeyHighlightsInput('Digital Marketing, SEO, Fast Support');
+    setSupportedLangs(['English', 'Roman Hindi']);
+    setToneEnthusiasm('Subtle & Professional (B2B/Medical)');
+    setBusinessAge('1 - 3 Years');
+    setTargetAudience('B2B');
+    setPlanId(plans[0]?.id || 'plan-pro');
+    setBranchLimit(plans[0]?.maxBranches || 5);
+    setMonthlyTokens(plans[0]?.monthlyTokens || 50000);
     setIsBizModalOpen(true);
     setMobileMenuOpen(false);
   };
@@ -1039,7 +1081,7 @@ export const AgencyPortal: React.FC = () => {
                               <span className="text-[#F59E0B] font-bold text-xs">★ {r.rating}</span>
                             </div>
                             <p className="text-xs text-[#1E293B] italic">"{r.reviewText}"</p>
-                            <span className="text-[9px] text-[#64748B] block">{new Date(r.createdAt).toLocaleDateString()}</span>
+                            <span className="text-[9px] text-[#64748B] block">{new Date(r.createdAt).toLocaleDateString()} {new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                           </div>
                         ))
                       )}
@@ -1098,7 +1140,7 @@ export const AgencyPortal: React.FC = () => {
                               <span className="text-white font-bold text-[10px] bg-[#EF4444] px-1.5 py-0.5 rounded-full">★ {f.rating}</span>
                             </div>
                             <p className="text-xs text-[#1E293B]">"{f.comments}"</p>
-                            <span className="text-[9px] text-[#64748B] block">{new Date(f.createdAt).toLocaleDateString()}</span>
+                            <span className="text-[9px] text-[#64748B] block">{new Date(f.createdAt).toLocaleDateString()} {new Date(f.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                           </div>
                         ))
                       )}
@@ -1458,6 +1500,8 @@ export const AgencyPortal: React.FC = () => {
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditingBiz(b);
+                                setOnboardingStep(1);
+                                setBizModalError('');
                                 setBizName(b.name);
                                 setBizCategory(b.category || '');
                                 setOwnerName(b.ownerName);
@@ -1515,9 +1559,25 @@ export const AgencyPortal: React.FC = () => {
           {/* TAB 3: SAAS PLANS */}
           {activeTab === 'PLANS' && (
             <div className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-6">
-              <div>
-                <h3 className="text-lg font-extrabold text-[#1E293B]">SaaS Subscription Packages</h3>
-                <p className="text-xs text-[#64748B]">Configure pricing, branch quotas, and token allowances for client businesses</p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-extrabold text-[#1E293B]">Subscription Packages</h3>
+                  <p className="text-xs text-[#64748B]">Configure pricing, branch quotas, and token allowances for client businesses</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingPlan(null);
+                    setEditPlanName('');
+                    setEditPlanPrice(499);
+                    setEditPlanBranches(3);
+                    setEditPlanTokens(30000);
+                    setIsPlanModalOpen(true);
+                  }}
+                  className="px-4 py-2.5 clay-btn-primary text-xs font-bold flex items-center justify-center space-x-2 shrink-0 cursor-pointer shadow-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create New Plan</span>
+                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1529,21 +1589,31 @@ export const AgencyPortal: React.FC = () => {
                         <p className="text-xs text-[#64748B]">{p.description}</p>
                       </div>
                       <div className="flex flex-col items-end gap-2">
-                        <span className="text-lg font-extrabold text-[#2563EB]">${p.priceMonthly}<span className="text-xs text-[#64748B] font-normal">/mo</span></span>
-                        <button
-                          onClick={() => {
-                            setEditingPlan(p);
-                            setEditPlanName(p.name);
-                            setEditPlanPrice(p.priceMonthly);
-                            setEditPlanBranches(p.maxBranches);
-                            setEditPlanTokens(p.monthlyTokens);
-                            setIsPlanModalOpen(true);
-                          }}
-                          className="px-3 py-1.5 text-[10px] font-bold clay-btn-secondary flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Settings className="w-3 h-3" />
-                          <span>Edit</span>
-                        </button>
+                        <span className="text-lg font-extrabold text-[#2563EB]">₹{p.priceMonthly}<span className="text-xs text-[#64748B] font-normal">/mo</span></span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => {
+                              setEditingPlan(p);
+                              setEditPlanName(p.name);
+                              setEditPlanPrice(p.priceMonthly);
+                              setEditPlanBranches(p.maxBranches);
+                              setEditPlanTokens(p.monthlyTokens);
+                              setIsPlanModalOpen(true);
+                            }}
+                            className="px-2.5 py-1 text-[10px] font-bold clay-btn-secondary flex items-center gap-1 cursor-pointer"
+                            title="Edit Plan"
+                          >
+                            <Settings className="w-3 h-3" />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeletePlan(p.id, p.name)}
+                            className="p-1 text-[#EF4444] hover:bg-[#EF4444]/10 rounded-lg transition-colors cursor-pointer"
+                            title="Delete Plan"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
 
@@ -1628,7 +1698,7 @@ export const AgencyPortal: React.FC = () => {
                         className="w-full pl-4 pr-10 py-3 text-sm font-semibold text-[#0F172A] bg-white border border-[#CBD5E1] rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all appearance-none outline-none shadow-sm"
                       >
                         {plans.map(p => (
-                          <option key={p.id} value={p.id}>{p.name} (${p.priceMonthly}/mo)</option>
+                          <option key={p.id} value={p.id}>{p.name} (₹{p.priceMonthly}/mo)</option>
                         ))}
                       </select>
                       <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8] pointer-events-none rotate-90" />
@@ -2024,8 +2094,67 @@ export const AgencyPortal: React.FC = () => {
         isOpen={isBizModalOpen}
         onClose={() => setIsBizModalOpen(false)}
         title={editingBiz ? 'Edit Client Business Settings' : 'Onboard New SaaS Business'}
-        subtitle="Set up business owner account and branch quotas"
+        subtitle="3-Step SaaS Onboarding & Anti-Hyperbole AI Grounding"
       >
+        {/* Step Indicator Visualizer */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between relative mb-2">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-slate-200 w-full z-0 rounded-full" />
+            <div
+              className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 z-0 transition-all duration-300 rounded-full"
+              style={{
+                width: onboardingStep === 1 ? '0%' : onboardingStep === 2 ? '50%' : '100%'
+              }}
+            />
+
+            {/* Step 1 Circle */}
+            <div
+              onClick={() => setOnboardingStep(1)}
+              className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full text-xs font-black transition-all cursor-pointer ${
+                onboardingStep >= 1
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                  : 'bg-slate-100 text-slate-400 border border-slate-300'
+              }`}
+            >
+              1
+            </div>
+
+            {/* Step 2 Circle */}
+            <div
+              onClick={() => {
+                if (bizName && ownerName && ownerEmail) setOnboardingStep(2);
+              }}
+              className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full text-xs font-black transition-all cursor-pointer ${
+                onboardingStep >= 2
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                  : 'bg-slate-100 text-slate-400 border border-slate-300'
+              }`}
+            >
+              2
+            </div>
+
+            {/* Step 3 Circle */}
+            <div
+              onClick={() => {
+                if (bizName && ownerName && ownerEmail) setOnboardingStep(3);
+              }}
+              className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full text-xs font-black transition-all cursor-pointer ${
+                onboardingStep === 3
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+                  : 'bg-slate-100 text-slate-400 border border-slate-300'
+              }`}
+            >
+              3
+            </div>
+          </div>
+
+          <div className="flex justify-between text-[11px] font-bold text-slate-600">
+            <span className={onboardingStep === 1 ? 'text-blue-600 font-extrabold' : ''}>Step 1: Profile</span>
+            <span className={onboardingStep === 2 ? 'text-blue-600 font-extrabold' : ''}>Step 2: AI Grounding</span>
+            <span className={onboardingStep === 3 ? 'text-blue-600 font-extrabold' : ''}>Step 3: Plan & Quotas</span>
+          </div>
+        </div>
+
         <form onSubmit={handleSaveBusiness} className="space-y-4">
           {bizModalError && (
             <div className="p-3 bg-[#EF4444]/10 text-[#EF4444] font-bold text-xs rounded-xl border border-[#EF4444]/20">
@@ -2033,149 +2162,367 @@ export const AgencyPortal: React.FC = () => {
             </div>
           )}
 
-          <div>
-            <label className="block text-xs font-bold text-[#1E293B] mb-1">Business Name</label>
-            <input
-              type="text"
-              required
-              value={bizName}
-              onChange={e => setBizName(e.target.value)}
-              placeholder="e.g. Smile Dental Clinic"
-              className="w-full px-3.5 py-2.5 text-xs clay-input"
-            />
-          </div>
+          {/* STEP 1: Account & Business Profile */}
+          {onboardingStep === 1 && (
+            <div className="space-y-4 animate-fadeIn">
+              <div>
+                <label className="block text-xs font-bold text-[#1E293B] mb-1">Business Name <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  required
+                  value={bizName}
+                  onChange={e => setBizName(e.target.value)}
+                  placeholder="e.g. Smile Dental Clinic, RC Media"
+                  className="w-full px-3.5 py-2.5 text-xs clay-input"
+                />
+              </div>
 
-          <div>
-            <label className="block text-xs font-bold text-[#1E293B] mb-1">Business Category / Industry</label>
-            <CategorySearchDropdown
-              value={bizCategory}
-              onChange={setBizCategory}
-              required
-            />
-          </div>
+              <div>
+                <label className="block text-xs font-bold text-[#1E293B] mb-1">Industry / Category <span className="text-red-500">*</span></label>
+                <CategorySearchDropdown
+                  value={bizCategory}
+                  onChange={setBizCategory}
+                  required
+                />
+              </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-[#1E293B] mb-1">Owner Name</label>
-              <input
-                type="text"
-                required
-                value={ownerName}
-                onChange={e => setOwnerName(e.target.value)}
-                placeholder="Dr. Michael Carter"
-                className="w-full px-3.5 py-2.5 text-xs clay-input"
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Owner Name <span className="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    required
+                    value={ownerName}
+                    onChange={e => setOwnerName(e.target.value)}
+                    placeholder="Account holder full name"
+                    className="w-full px-3.5 py-2.5 text-xs clay-input"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Owner Email <span className="text-red-500">*</span></label>
+                  <input
+                    type="email"
+                    required
+                    value={ownerEmail}
+                    onChange={e => setOwnerEmail(e.target.value)}
+                    placeholder="Primary credentials identifier"
+                    className="w-full px-3.5 py-2.5 text-xs clay-input"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 bg-[#EEF2F7] rounded-2xl border border-[#DCE3EC] space-y-2 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-extrabold text-[#1E293B]">
+                    {editingBiz ? 'Reset Owner Password (Optional)' : 'Account Password'}
+                  </label>
+                  {editingBiz && (
+                    <span className="text-[10px] text-[#64748B] italic">Leave blank to keep current</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#1E293B] mb-1">
+                      {editingBiz ? 'New Password' : 'Set Password'}
+                    </label>
+                    <input
+                      type="password"
+                      required={!editingBiz}
+                      value={ownerPassword}
+                      onChange={e => setOwnerPassword(e.target.value)}
+                      placeholder={editingBiz ? 'Enter new password...' : 'Min 6 characters'}
+                      className="w-full px-3.5 py-2.5 text-xs clay-input"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-[#1E293B] mb-1">Confirm Password</label>
+                    <input
+                      type="password"
+                      required={!editingBiz}
+                      value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)}
+                      placeholder="Re-enter password"
+                      className="w-full px-3.5 py-2.5 text-xs clay-input"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-[#1E293B] mb-1">Owner Email</label>
-              <input
-                type="email"
-                required
-                value={ownerEmail}
-                onChange={e => setOwnerEmail(e.target.value)}
-                placeholder="owner@business.com"
-                className="w-full px-3.5 py-2.5 text-xs clay-input"
-              />
-            </div>
-          </div>
+          )}
 
-          <div className="p-4 bg-[#EEF2F7] rounded-2xl border border-[#DCE3EC] space-y-2 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
-            <div className="flex items-center justify-between">
-              <label className="block text-xs font-extrabold text-[#1E293B]">
-                {editingBiz ? 'Reset Owner Password (Optional)' : 'Account Password'}
-              </label>
-              {editingBiz && (
-                <span className="text-[10px] text-[#64748B] italic">Leave blank to keep current password</span>
+          {/* STEP 2: AI Review Grounding (Anti-Hyperbole Engine) */}
+          {onboardingStep === 2 && (
+            <div className="space-y-4 animate-fadeIn">
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-800 leading-relaxed">
+                ✨ <strong>Anti-Hyperbole Grounding Engine:</strong> These parameters ground Gemini 2.5 Flash Lite to produce realistic, non-exaggerated reviews for this business.
+              </div>
+
+              {/* Team Size Single Select Cards */}
+              <div>
+                <label className="block text-xs font-bold text-[#1E293B] mb-1.5">Team Size</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    'Solo / Freelancer (1)',
+                    'Small Team (2–10)',
+                    'Medium Team (11–50)',
+                    'Large Enterprise (50+)'
+                  ].map(option => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setTeamSize(option)}
+                      className={`p-2.5 rounded-xl border text-left text-xs font-semibold transition-all ${
+                        teamSize === option
+                          ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-xs'
+                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Location Setup */}
+              <div>
+                <label className="block text-xs font-bold text-[#1E293B] mb-1.5">Location Setup</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    'Physical Store / Office (In-person)',
+                    'Online / Remote Service (B2B)'
+                  ].map(loc => (
+                    <label key={loc} className={`flex items-center space-x-2.5 p-2.5 rounded-xl border cursor-pointer text-xs font-medium ${
+                      locationSetup === loc ? 'border-blue-600 bg-blue-50/60 text-blue-900 font-bold' : 'border-slate-200 text-slate-600'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="locationSetup"
+                        checked={locationSetup === loc}
+                        onChange={() => setLocationSetup(loc)}
+                        className="text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>{loc}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Business Age Selector */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#1E293B] mb-1">How Long Ago Business Started</label>
+                  <select
+                    value={businessAge}
+                    onChange={e => setBusinessAge(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-xs clay-input"
+                  >
+                    <option value="Just Launched (< 1 Year)">Just Launched (&lt; 1 Year)</option>
+                    <option value="1 - 3 Years">1 - 3 Years</option>
+                    <option value="3 - 5 Years">3 - 5 Years</option>
+                    <option value="5 - 10+ Years">5 - 10+ Years Established</option>
+                  </select>
+                </div>
+
+                {/* Target Audience */}
+                <div>
+                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Target Audience</label>
+                  <div className="flex gap-2">
+                    {['B2B', 'B2C', 'D2C'].map(aud => (
+                      <button
+                        key={aud}
+                        type="button"
+                        onClick={() => setTargetAudience(aud)}
+                        className={`flex-1 py-2.5 text-xs font-bold rounded-xl border transition-all ${
+                          targetAudience === aud
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                        }`}
+                      >
+                        {aud}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Key Services / Highlights Tag Input */}
+              <div>
+                <label className="block text-xs font-bold text-[#1E293B] mb-1">Key Services / Highlights (Comma Separated)</label>
+                <input
+                  type="text"
+                  value={keyHighlightsInput}
+                  onChange={e => setKeyHighlightsInput(e.target.value)}
+                  placeholder="e.g. Digital Marketing, SEO, Fast Delivery, Gentle Care"
+                  className="w-full px-3.5 py-2.5 text-xs clay-input"
+                />
+              </div>
+
+              {/* Supported Languages */}
+              <div>
+                <label className="block text-xs font-bold text-[#1E293B] mb-1.5">Supported Languages</label>
+                <div className="flex items-center gap-4">
+                  {['English', 'Roman Hindi'].map(lang => (
+                    <label key={lang} className="flex items-center space-x-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={supportedLangs.includes(lang)}
+                        onChange={e => {
+                          if (e.target.checked) {
+                            setSupportedLangs([...supportedLangs, lang]);
+                          } else {
+                            if (supportedLangs.length > 1) {
+                              setSupportedLangs(supportedLangs.filter(l => l !== lang));
+                            }
+                          }
+                        }}
+                        className="rounded text-blue-600 focus:ring-blue-500"
+                      />
+                      <span>{lang === 'Roman Hindi' ? 'Roman Hindi (Hinglish)' : 'English'}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tone & Enthusiasm */}
+              <div>
+                <label className="block text-xs font-bold text-[#1E293B] mb-1">Tone & Enthusiasm</label>
+                <select
+                  value={toneEnthusiasm}
+                  onChange={e => setToneEnthusiasm(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs clay-input"
+                >
+                  <option value="Subtle & Professional (B2B/Medical)">Subtle & Professional (B2B/Medical)</option>
+                  <option value="Casual & Friendly">Casual & Friendly</option>
+                  <option value="Expressive">Expressive</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3: SaaS Subscription Plan & Quotas */}
+          {onboardingStep === 3 && (
+            <div className="space-y-4 animate-fadeIn">
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-[#1E293B] mb-1">Assigned Plan (Auto-Fetched)</label>
+                <select
+                  value={planId}
+                  onChange={(e) => {
+                    const selectedPlanId = e.target.value;
+                    setPlanId(selectedPlanId);
+                    const selectedPlan = plans.find(p => p.id === selectedPlanId);
+                    if (selectedPlan) {
+                      setBranchLimit(selectedPlan.maxBranches);
+                      setMonthlyTokens(selectedPlan.monthlyTokens);
+                    }
+                  }}
+                  className="w-full px-3.5 py-2.5 text-xs clay-input font-medium"
+                  required
+                >
+                  <option value="" disabled>Select a plan...</option>
+                  {plans.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} (₹{p.priceMonthly}/mo - {p.maxBranches} Branch(es), {p.monthlyTokens.toLocaleString()} tokens)</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Branch Limit</label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    value={branchLimit}
+                    onChange={e => setBranchLimit(parseInt(e.target.value) || 1)}
+                    className="w-full px-3.5 py-2.5 text-xs clay-input font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Monthly AI Quota (Tokens)</label>
+                  <input
+                    type="number"
+                    required
+                    min={1000}
+                    value={monthlyTokens}
+                    onChange={e => setMonthlyTokens(parseInt(e.target.value) || 10000)}
+                    className="w-full px-3.5 py-2.5 text-xs clay-input font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                <p className="text-[11px] font-bold text-slate-700">Account Provision Summary:</p>
+                <p className="text-[10px] text-slate-500">Business: <strong>{bizName || 'N/A'}</strong> ({bizCategory || 'General'})</p>
+                <p className="text-[10px] text-slate-500">Owner: <strong>{ownerName || 'N/A'}</strong> ({ownerEmail || 'N/A'})</p>
+                <p className="text-[10px] text-slate-500">Scale Grounding: {teamSize} | {targetAudience} | {locationSetup}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Dynamic Action Buttons */}
+          <div className="pt-4 border-t border-[#E8EDF5] flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-2">
+            <div>
+              {onboardingStep === 1 ? (
+                <button
+                  type="button"
+                  onClick={() => setIsBizModalOpen(false)}
+                  className="w-full sm:w-auto px-5 py-2.5 clay-btn-secondary text-xs font-bold flex items-center justify-center cursor-pointer"
+                >
+                  Cancel
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setOnboardingStep((onboardingStep - 1) as 1 | 2)}
+                  className="w-full sm:w-auto px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl flex items-center justify-center cursor-pointer transition-colors"
+                >
+                  <ChevronLeft/> Back
+                </button>
               )}
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-[#1E293B] mb-1">
-                  {editingBiz ? 'New Password' : 'Set Password'}
-                </label>
-                <input
-                  type="password"
-                  required={!editingBiz}
-                  value={ownerPassword}
-                  onChange={e => setOwnerPassword(e.target.value)}
-                  placeholder={editingBiz ? 'Enter new password...' : 'Min 6 characters'}
-                  className="w-full px-3.5 py-2.5 text-xs clay-input"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-[#1E293B] mb-1">Confirm Password</label>
-                <input
-                  type="password"
-                  required={!editingBiz}
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="Re-enter password"
-                  className="w-full px-3.5 py-2.5 text-xs clay-input"
-                />
-              </div>
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-[#1E293B] mb-1">Assigned SaaS Plan</label>
-            <select
-              value={planId}
-              onChange={(e) => {
-                const selectedPlanId = e.target.value;
-                setPlanId(selectedPlanId);
-                const selectedPlan = plans.find(p => p.id === selectedPlanId);
-                if (selectedPlan) {
-                  setBranchLimit(selectedPlan.maxBranches);
-                  setMonthlyTokens(selectedPlan.monthlyTokens);
-                }
-              }}
-              className="w-full px-3.5 py-2.5 text-xs clay-input"
-              required
-            >
-              <option value="" disabled>Select a plan...</option>
-              {plans.map(p => (
-                <option key={p.id} value={p.id}>{p.name} (${p.priceMonthly}/mo)</option>
-              ))}
-            </select>
-          </div>
+            <div className="w-full sm:w-auto flex justify-end">
+              {onboardingStep === 1 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBizModalError('');
+                    if (!bizName.trim()) { setBizModalError('Business Name is required.'); return; }
+                    if (!bizCategory.trim()) { setBizModalError('Category is required.'); return; }
+                    if (!ownerName.trim()) { setBizModalError('Owner Name is required.'); return; }
+                    if (!ownerEmail.trim()) { setBizModalError('Owner Email is required.'); return; }
+                    if (!editingBiz) {
+                      if (!ownerPassword.trim()) { setBizModalError('Password is required.'); return; }
+                      if (ownerPassword.length < 6) { setBizModalError('Password must be 6+ chars.'); return; }
+                      if (ownerPassword !== confirmPassword) { setBizModalError('Passwords do not match.'); return; }
+                    }
+                    setOnboardingStep(2);
+                  }}
+                  className="w-full sm:w-auto px-5 py-2.5 clay-btn-primary text-xs font-bold flex items-center justify-center cursor-pointer shadow-xs"
+                >
+                  Next: AI Grounding <ChevronRight/>
+                </button>
+              )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-[#1E293B] mb-1">Branch Limit</label>
-              <input
-                type="number"
-                required
-                value={branchLimit}
-                onChange={e => setBranchLimit(parseInt(e.target.value))}
-                className="w-full px-3.5 py-2.5 text-xs clay-input"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-[#1E293B] mb-1">Monthly AI Tokens</label>
-              <input
-                type="number"
-                required
-                value={monthlyTokens}
-                onChange={e => setMonthlyTokens(parseInt(e.target.value))}
-                className="w-full px-3.5 py-2.5 text-xs clay-input font-mono"
-              />
-            </div>
-          </div>
+              {onboardingStep === 2 && (
+                <button
+                  type="button"
+                  onClick={() => setOnboardingStep(3)}
+                  className="w-full sm:w-auto px-5 py-2.5 clay-btn-primary text-xs font-bold flex items-center justify-center cursor-pointer shadow-xs"
+                >
+                  Next: Plan &amp; Quotas <ChevronRight />
+                </button>
+              )}
 
-          <div className="pt-3 border-t border-[#E8EDF5] flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => setIsBizModalOpen(false)}
-              className="w-full sm:w-auto px-5 py-2.5 clay-btn-secondary text-xs font-bold flex items-center justify-center cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="w-full sm:w-auto px-5 py-2.5 clay-btn-primary text-xs font-bold flex items-center justify-center cursor-pointer shadow-xs"
-            >
-              Save Business
-            </button>
+              {onboardingStep === 3 && (
+                <button
+                  type="submit"
+                  className="w-full sm:w-auto px-5 py-2.5 clay-btn-primary text-xs font-bold flex items-center justify-center cursor-pointer shadow-xs"
+                >
+                  Save Business &amp; Provision Account
+                </button>
+              )}
+            </div>
           </div>
         </form>
       </Modal>
@@ -2392,34 +2739,57 @@ export const AgencyPortal: React.FC = () => {
   </form>
 </Modal>
 
-      {/* EDIT PLAN MODAL */}
+      {/* EDIT / CREATE PLAN MODAL */}
       <Modal
         isOpen={isPlanModalOpen}
         onClose={() => setIsPlanModalOpen(false)}
-        title="Edit SaaS Plan"
-        subtitle="Modify plan limits, pricing, and features. Changes will automatically cascade to all businesses on this plan."
+        title={editingPlan ? 'Edit SaaS Plan' : 'Create New SaaS Plan'}
+        subtitle={editingPlan ? 'Modify plan limits, pricing, and features. Changes will automatically cascade to all businesses on this plan.' : 'Define new SaaS tier pricing, branch limits, and monthly AI token quota.'}
       >
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            if (!editingPlan) return;
+            const numericPrice = Number(editPlanPrice) || 0;
+            const numericBranches = Number(editPlanBranches) || 1;
+            const numericTokens = Number(editPlanTokens) || 10000;
             try {
-              await fetchWithAuth(`/api/plans/${editingPlan.id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  name: editPlanName,
-                  priceMonthly: editPlanPrice,
-                  maxBranches: editPlanBranches,
-                  monthlyTokens: editPlanTokens,
-                }),
-              });
-              showToast(`Successfully updated ${editPlanName} plan!`);
+              if (editingPlan) {
+                await fetchWithAuth(`/api/plans/${editingPlan.id}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    name: editPlanName,
+                    priceMonthly: numericPrice,
+                    maxBranches: numericBranches,
+                    monthlyTokens: numericTokens,
+                  }),
+                });
+                showToast(`Successfully updated ${editPlanName} plan!`);
+              } else {
+                await fetchWithAuth('/api/plans', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    name: editPlanName,
+                    priceMonthly: numericPrice,
+                    priceYearly: numericPrice * 10,
+                    maxBranches: numericBranches,
+                    monthlyTokens: numericTokens,
+                    features: [
+                      `Max ${numericBranches} Branch Location(s)`,
+                      `${numericTokens.toLocaleString()} Monthly AI Tokens`,
+                      'White-label Customer Review Portal'
+                    ],
+                    status: 'ACTIVE'
+                  }),
+                });
+                showToast(`Successfully created ${editPlanName} plan!`);
+              }
               setIsPlanModalOpen(false);
               loadAgencyData();
             } catch (err) {
               console.error(err);
-              showToast('Failed to update plan.', 'error');
+              showToast('Failed to save plan.', 'error');
             }
           }}
           className="space-y-4"
@@ -2431,16 +2801,18 @@ export const AgencyPortal: React.FC = () => {
               required
               value={editPlanName}
               onChange={(e) => setEditPlanName(e.target.value)}
+              placeholder="e.g. Enterprise Unlimited, Starter Lite"
               className="w-full px-3.5 py-2.5 text-xs clay-input"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-[#1E293B] mb-1">Monthly Price ($)</label>
+            <label className="block text-xs font-bold text-[#1E293B] mb-1">Monthly Price (₹)</label>
             <input
               type="number"
               required
+              min={0}
               value={editPlanPrice}
-              onChange={(e) => setEditPlanPrice(parseFloat(e.target.value))}
+              onChange={(e) => setEditPlanPrice(e.target.value === '' ? '' : Number(e.target.value))}
               className="w-full px-3.5 py-2.5 text-xs clay-input"
             />
           </div>
@@ -2450,8 +2822,9 @@ export const AgencyPortal: React.FC = () => {
               <input
                 type="number"
                 required
+                min={1}
                 value={editPlanBranches}
-                onChange={(e) => setEditPlanBranches(parseInt(e.target.value))}
+                onChange={(e) => setEditPlanBranches(e.target.value === '' ? '' : Number(e.target.value))}
                 className="w-full px-3.5 py-2.5 text-xs clay-input"
               />
             </div>
@@ -2460,9 +2833,10 @@ export const AgencyPortal: React.FC = () => {
               <input
                 type="number"
                 required
+                min={1000}
                 value={editPlanTokens}
-                onChange={(e) => setEditPlanTokens(parseInt(e.target.value))}
-                className="w-full px-3.5 py-2.5 text-xs clay-input"
+                onChange={(e) => setEditPlanTokens(e.target.value === '' ? '' : Number(e.target.value))}
+                className="w-full px-3.5 py-2.5 text-xs clay-input font-mono"
               />
             </div>
           </div>
@@ -2476,9 +2850,9 @@ export const AgencyPortal: React.FC = () => {
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 clay-btn-primary text-xs font-bold cursor-pointer"
+              className="px-5 py-2.5 clay-btn-primary text-xs font-bold cursor-pointer shadow-xs"
             >
-              Save Changes
+              {editingPlan ? 'Save Changes' : 'Create Plan'}
             </button>
           </div>
         </form>
@@ -2491,6 +2865,31 @@ export const AgencyPortal: React.FC = () => {
         branch={selectedQrBranch}
         businessName={selectedBusiness?.name || agencyNameInput}
         logoUrl={selectedBusiness?.logoUrl || agencyLogoUrl}
+        onSaveSuccess={async () => {
+          if (selectedBusiness) {
+            try {
+              const brRes = await fetchWithAuth(`/api/branches?businessId=${selectedBusiness.id}`).then(r => r.json());
+              if (brRes.success) {
+                setBusinessBranches(brRes.data || []);
+                if (selectedQrBranch) {
+                  const updated = brRes.data.find((b: Branch) => b.id === selectedQrBranch.id);
+                  if (updated) setSelectedQrBranch(updated);
+                }
+              }
+              // Also reload reviews/feedback
+              const [revRes, fbRes] = await Promise.all([
+                fetchWithAuth(`/api/reviews?businessId=${selectedBusiness.id}`).then(r => r.json()),
+                fetchWithAuth(`/api/feedback?businessId=${selectedBusiness.id}`).then(r => r.json()),
+              ]);
+              if (revRes.success) setBusinessReviews(revRes.data || []);
+              if (fbRes.success) setBusinessFeedback(fbRes.data || []);
+            } catch (err) {
+              console.error('Error reloading business details after QR save:', err);
+            }
+          } else {
+            await loadAgencyProfileData();
+          }
+        }}
       />
     </div>
   );

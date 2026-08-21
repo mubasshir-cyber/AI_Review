@@ -49,6 +49,7 @@ export interface Branch {
   googlePlaceId?: string;
   googleReviewUrl: string;
   qrCodeUrl?: string;
+  qrConfig?: QrConfig;
   serviceTags: string[];
   negativeTags: string[];
   totalReviews: number;
