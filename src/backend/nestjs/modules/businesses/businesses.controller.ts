@@ -34,11 +34,14 @@ export class BusinessesController {
     ownerName: string;
     ownerEmail: string;
     password: string;
+    phone?: string;
+    googleReviewUrl?: string;
     category?: string;
     planId?: string;
     logoUrl?: string;
     branchLimit?: number;
     monthlyTokenLimit?: number;
+    aiGrounding?: any;
   }) {
     return this.businessesService.create(body);
   }

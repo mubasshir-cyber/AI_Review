@@ -13,6 +13,19 @@ export interface User {
   updatedAt?: string;
 }
 
+export interface AiGroundingConfig {
+  id: string;
+  businessId: string;
+  teamSize: string;
+  locationSetup: string;
+  businessAge: string;
+  targetAudience: string | string[];
+  supportedLanguages: string[];
+  toneEnthusiasm: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Business {
   id: string;
   name: string;
@@ -23,6 +36,7 @@ export interface Business {
   phone?: string;
   address?: string;
   website?: string;
+  googleReviewUrl?: string;
   description?: string;
   workingHours?: string;
   category: string;
@@ -35,7 +49,9 @@ export interface Business {
   lastTokenResetAt?: string;
   status: 'ACTIVE' | 'SUSPENDED' | 'TRIAL';
   createdAt: string;
+  aiGrounding?: AiGroundingConfig;
 }
+
 
 export interface Branch {
   id: string;

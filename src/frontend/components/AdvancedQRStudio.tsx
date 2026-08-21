@@ -243,7 +243,16 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
 
       // 1. Draw Background
       ctx.fillStyle = config.isTransparent ? '#00000000' : (config.bgColor || '#FFFFFF');
-      ctx.fillRect(0, 0, size, size);
+      if (!config.isTransparent) {
+        ctx.beginPath();
+        const radius = size * 0.08;
+        if (ctx.roundRect) {
+          ctx.roundRect(0, 0, size, size, radius);
+        } else {
+          ctx.rect(0, 0, size, size);
+        }
+        ctx.fill();
+      }
 
       // 2. Helper to draw Eye
       const drawEye = (startRow: number, startCol: number) => {
@@ -444,6 +453,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
         frameSubtitle: config.frameSubtitle,
         primaryColor: config.primaryColor,
         accentColor: config.accentColor,
+        bgColor: config.bgColor,
         showGoogleBadge: config.showGoogleBadge,
         badgeRating: config.badgeRating,
         badgeReviewCount: config.badgeReviewCount,
@@ -469,6 +479,7 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
         frameSubtitle: config.frameSubtitle,
         primaryColor: config.primaryColor,
         accentColor: config.accentColor,
+        bgColor: config.bgColor,
         showGoogleBadge: config.showGoogleBadge,
         badgeRating: config.badgeRating,
         badgeReviewCount: config.badgeReviewCount,
@@ -1122,13 +1133,13 @@ export const AdvancedQRStudio: React.FC<AdvancedQRStudioProps> = ({
 
                 {/* QR Image with centered logo canvas output */}
                 <div 
-                  className="mt-3 p-2 rounded-2xl border border-[#DCE3EC] shadow-[2px_2px_6px_rgba(100,116,139,0.06)]"
+                  className="mt-3 p-2.5 rounded-2xl border border-[#DCE3EC] shadow-[2px_2px_6px_rgba(100,116,139,0.06)] overflow-hidden"
                   style={{ backgroundColor: config.bgColor || '#FFFFFF' }}
                 >
                   {qrDataUrl ? (
-                    <img src={qrDataUrl} alt="QR Scanner" className="w-44 h-44 object-contain" />
+                    <img src={qrDataUrl} alt="QR Scanner" className="w-44 h-44 object-contain rounded-xl overflow-hidden block" />
                   ) : (
-                    <div className="w-44 h-44 bg-[#EEF2F7] rounded-2xl flex items-center justify-center text-[#1E293B]">
+                    <div className="w-44 h-44 bg-[#EEF2F7] rounded-xl flex items-center justify-center text-[#1E293B]">
                       <QrCode className="w-8 h-8 animate-pulse text-[#2563EB]" />
                     </div>
                   )}

@@ -314,7 +314,7 @@ export const LandingPage: React.FC = () => {
               Subscription Plans
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              Simple, Transparent SaaS Pricing
+              Simple, Transparent Pricing
             </h2>
             <p className="text-sm text-slate-600">
               Pick the right branch quota for your locations. Instant account activation on WhatsApp.
@@ -434,7 +434,7 @@ export const LandingPage: React.FC = () => {
                 details: ['Daily QR scan logging', 'AI token utilization metrics', 'Device and browser analytics']
               },
               {
-                title: 'SaaS Agency & Tenant Console',
+                title: 'Agency & Tenant Console',
                 desc: 'Complete white-labeled system settings to customize quotas, subscription plans, ads, and platform assets.',
                 icon: Building2,
                 color: 'text-slate-600 bg-slate-50 border-slate-100',

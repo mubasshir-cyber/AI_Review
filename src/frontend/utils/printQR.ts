@@ -6,6 +6,7 @@ export interface PrintQRCardParams {
   frameSubtitle?: string;
   primaryColor?: string;
   accentColor?: string;
+  bgColor?: string;
   showGoogleBadge?: boolean;
   badgeRating?: string;
   badgeReviewCount?: string;
@@ -23,6 +24,7 @@ export function printQRCard(params: PrintQRCardParams) {
     frameSubtitle = 'Point phone camera at QR code',
     primaryColor = '#4F46E5',
     accentColor = '#F59E0B',
+    bgColor = '#FFFFFF',
     showGoogleBadge = true,
     badgeRating = '5.0',
     badgeReviewCount = '200+',
@@ -163,17 +165,20 @@ export function printQRCard(params: PrintQRCardParams) {
             font-weight: 500;
           }
           .qr-box {
-            background: #ffffff;
+            background: ${bgColor};
             border: 2px solid #e2e8f0;
-            border-radius: 20px;
-            padding: 14px;
+            border-radius: 24px;
+            padding: 12px;
             display: inline-block;
             margin: 0 auto;
+            overflow: hidden;
           }
           .qr-img {
             width: 200px;
             height: 200px;
             display: block;
+            border-radius: 16px;
+            overflow: hidden;
           }
           .badge-wrapper {
             margin-top: 14px;
@@ -432,17 +437,18 @@ export async function downloadCardAsPNG(params: PrintQRCardParams) {
 
   currentY += 30;
 
-  // 7. QR Code Image
+  // 7. QR Code Image & Container
   const qrX = (width - qrSize) / 2;
   const qrY = currentY;
+  const qrRadius = 24;
 
   // QR Container box
   ctx.save();
-  ctx.fillStyle = '#FFFFFF';
+  ctx.fillStyle = (params as any).bgColor || '#FFFFFF';
   ctx.strokeStyle = '#E2E8F0';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.roundRect(qrX - 16, qrY - 16, qrSize + 32, qrSize + 32, 24);
+  ctx.roundRect(qrX - 16, qrY - 16, qrSize + 32, qrSize + 32, qrRadius + 8);
   ctx.fill();
   ctx.stroke();
   ctx.restore();
@@ -450,7 +456,12 @@ export async function downloadCardAsPNG(params: PrintQRCardParams) {
   await new Promise<void>((resolve) => {
     const qrImg = new Image();
     qrImg.onload = () => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(qrX, qrY, qrSize, qrSize, qrRadius);
+      ctx.clip();
       ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+      ctx.restore();
       resolve();
     };
     qrImg.onerror = () => resolve();
