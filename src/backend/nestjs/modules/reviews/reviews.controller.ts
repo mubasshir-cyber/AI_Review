@@ -19,6 +19,7 @@ export class ReviewsController {
       rating: number;
       selectedTags: string[];
       customNote?: string;
+      language?: string;
     }
   ) {
     return this.reviewsService.generateAiReview(body);

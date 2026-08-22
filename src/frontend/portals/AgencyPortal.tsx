@@ -124,7 +124,7 @@ export const AgencyPortal: React.FC = () => {
   const [teamSize, setTeamSize] = useState('Solo / Freelancer (1)');
   const [locationSetup, setLocationSetup] = useState('Physical Store / Office (In-person)');
   const [keyHighlightsInput, setKeyHighlightsInput] = useState('Digital Marketing, SEO, Fast Support');
-  const [supportedLangs, setSupportedLangs] = useState<string[]>(['English', 'Roman Hindi']);
+  const [supportedLangs, setSupportedLangs] = useState<string[]>(['English', 'Hinglish']);
   const [toneEnthusiasm, setToneEnthusiasm] = useState('Subtle & Professional (B2B/Medical)');
   const [businessAge, setBusinessAge] = useState('1 - 3 Years');
   const [targetAudience, setTargetAudience] = useState<string[]>(['B2B']);
@@ -583,7 +583,7 @@ export const AgencyPortal: React.FC = () => {
     setConfirmPassword('');
     setTeamSize('Solo / Freelancer (1)');
     setLocationSetup('Physical Store / Office (In-person)');
-    setSupportedLangs(['English', 'Roman Hindi']);
+    setSupportedLangs(['English', 'Hinglish']);
     setToneEnthusiasm('Subtle & Professional (B2B/Medical)');
     setBusinessAge('1 - 3 Years');
     setTargetAudience(['B2B']);
@@ -850,7 +850,8 @@ export const AgencyPortal: React.FC = () => {
                     if (selectedBusiness.aiGrounding) {
                       setTeamSize(selectedBusiness.aiGrounding.teamSize || 'Solo / Freelancer (1)');
                       setLocationSetup(selectedBusiness.aiGrounding.locationSetup || 'Physical Store / Office (In-person)');
-                      setSupportedLangs(selectedBusiness.aiGrounding.supportedLanguages || ['English', 'Roman Hindi']);
+                      const loadedLangs = (selectedBusiness.aiGrounding.supportedLanguages || ['English', 'Hinglish']).map(l => l === 'Roman Hindi' ? 'Hinglish' : l);
+                      setSupportedLangs(loadedLangs);
                       setToneEnthusiasm(selectedBusiness.aiGrounding.toneEnthusiasm || 'Subtle & Professional (B2B/Medical)');
                       setBusinessAge(selectedBusiness.aiGrounding.businessAge || '1 - 3 Years');
                       const audVal = selectedBusiness.aiGrounding.targetAudience;
@@ -1565,7 +1566,8 @@ export const AgencyPortal: React.FC = () => {
                                 if (b.aiGrounding) {
                                   setTeamSize(b.aiGrounding.teamSize || 'Solo / Freelancer (1)');
                                   setLocationSetup(b.aiGrounding.locationSetup || 'Physical Store / Office (In-person)');
-                                  setSupportedLangs(b.aiGrounding.supportedLanguages || ['English', 'Roman Hindi']);
+                                  const loadedLangs = (b.aiGrounding.supportedLanguages || ['English', 'Hinglish']).map(l => l === 'Roman Hindi' ? 'Hinglish' : l);
+                                  setSupportedLangs(loadedLangs);
                                   setToneEnthusiasm(b.aiGrounding.toneEnthusiasm || 'Subtle & Professional (B2B/Medical)');
                                   setBusinessAge(b.aiGrounding.businessAge || '1 - 3 Years');
                                   const audVal = b.aiGrounding.targetAudience;
@@ -2485,7 +2487,7 @@ export const AgencyPortal: React.FC = () => {
               <div>
                 <label className="block text-xs font-bold text-[#1E293B] mb-1.5">Supported Languages</label>
                 <div className="flex items-center gap-4">
-                  {['English', 'Roman Hindi'].map(lang => (
+                  {['English', 'Hinglish'].map(lang => (
                     <label key={lang} className="flex items-center space-x-2 text-xs font-semibold text-slate-700 cursor-pointer">
                       <input
                         type="checkbox"
@@ -2501,7 +2503,7 @@ export const AgencyPortal: React.FC = () => {
                         }}
                         className="rounded text-blue-600 focus:ring-blue-500"
                       />
-                      <span>{lang === 'Roman Hindi' ? 'Roman Hindi (Hinglish)' : 'English'}</span>
+                      <span>{lang === 'Hinglish' ? 'Hinglish' : 'English'}</span>
                     </label>
                   ))}
                 </div>
