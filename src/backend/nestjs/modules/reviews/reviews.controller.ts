@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Body, Query, Inject } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ReviewsService } from './reviews.service';
 import { Review, User } from '../../../../types';
 import { Public } from '../../common/decorators/public.decorator';
@@ -10,8 +11,26 @@ export class ReviewsController {
   constructor(@Inject(ReviewsService) private readonly reviewsService: ReviewsService) {}
 
   @Public()
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
   @Post('generate')
   async generateAi(
+    @Body()
+    body: {
+      businessName: string;
+      branchName: string;
+      rating: number;
+      selectedTags: string[];
+      customNote?: string;
+      language?: string;
+    }
+  ) {
+    return this.reviewsService.generateAiReview(body);
+  }
+
+  @Public()
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Post('generate-demo')
+  async generateAiDemo(
     @Body()
     body: {
       businessName: string;

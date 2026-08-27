@@ -11,9 +11,9 @@ export const Navbar: React.FC = () => {
 const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   return (<>
-    <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 sm:px-8 py-2.5 flex items-center justify-between sticky top-0 z-50 transition-all">
+    <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-3 sm:px-8 py-2.5 flex items-center justify-between sticky top-0 z-50 transition-all">
       {/* Brand Logo & Context */}
-      <div className="flex items-center space-x-3 shrink-0">
+      <div className="flex items-center space-x-2 sm:space-x-3 shrink">
         <button
           onClick={() => {
             if (user) {
@@ -22,12 +22,12 @@ const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
               navigate('/');
             }
           }}
-          className="flex items-center space-x-3 group text-left cursor-pointer focus:outline-none"
+          className="flex items-center space-x-2 group text-left cursor-pointer focus:outline-none shrink-0"
         >
           <img
             src="/logo-cropped.png"
             alt="ReviewScore AI"
-            className="h-[19px] sm:h-[21px] w-auto object-contain transition-all group-hover:opacity-90"
+            className="h-[17px] sm:h-[21px] w-auto object-contain transition-all group-hover:opacity-90 max-w-[130px] sm:max-w-none"
           />
           {user && (
             <span className="text-[10px] font-semibold tracking-wide uppercase bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200/80 flex items-center space-x-1 whitespace-nowrap">
@@ -51,32 +51,20 @@ const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
       {/* Right Side: Navigation & User Controls */}
       <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
-        {/* Navigation Links when unauthenticated */}
+        {/* Navigation Links when unauthenticated (No Home button on mobile, clean 2-button layout) */}
         {!user && (
-          <div className="flex items-center space-x-1 sm:space-x-1.5 shrink-0">
-            <Link
-              to="/"
-              className={`px-2.5 sm:px-3 py-1.5 min-h-[38px] text-xs font-medium rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 ${
-                location.pathname === '/'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
-              }`}
-            >
-              <Home className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Home</span>
-            </Link>
-
+          <div className="flex items-center space-x-1.5 shrink-0">
             <Link
               to="/review"
-              className={`px-2.5 sm:px-3 py-1.5 min-h-[38px] text-xs font-medium rounded-lg transition-all flex items-center space-x-1.5 cursor-pointer shrink-0 ${
+              className={`px-2 sm:px-3 py-1.5 min-h-[36px] text-[11px] sm:text-xs font-semibold rounded-lg transition-all flex items-center space-x-1 cursor-pointer shrink-0 ${
                 location.pathname === '/review'
                   ? 'bg-slate-900 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
               }`}
             >
               <QrCode className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Customer Review Card</span>
-              <span className="md:hidden">Review Card</span>
+              <span className="hidden sm:inline">Customer Review Card</span>
+              <span className="sm:hidden">Review Card</span>
             </Link>
           </div>
         )}
@@ -111,19 +99,18 @@ const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
               </div>
               <div className="hidden md:block w-px h-6 bg-slate-200 mr-1.5" />
               <button
-  onClick={() => setIsLogoutModalOpen(true)}
-  title="Sign Out"
-  className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition-colors ml-auto md:ml-0"
->
-  <LogOut className="w-3.5 h-3.5" />
-</button>
-
+                onClick={() => setIsLogoutModalOpen(true)}
+                title="Sign Out"
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-slate-50 hover:bg-rose-50 text-slate-500 hover:text-rose-600 transition-colors ml-auto md:ml-0 cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         ) : (
           <Link
             to="/login"
-            className="text-xs font-semibold px-3 py-1.5 min-h-[38px] bg-slate-900 hover:bg-slate-800 text-white rounded-lg shadow-xs flex items-center justify-center space-x-1.5 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] shrink-0"
+            className="text-[11px] sm:text-xs font-semibold px-2.5 sm:px-3 py-1.5 min-h-[36px] bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-xs flex items-center justify-center space-x-1 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] shrink-0"
           >
             <LogIn className="w-3.5 h-3.5" />
             <span>Sign In</span>

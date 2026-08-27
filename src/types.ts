@@ -9,6 +9,7 @@ export interface User {
   avatarUrl?: string;
   password?: string;
   status?: 'ACTIVE' | 'INACTIVE';
+  tokenVersion?: number;
   createdAt: string;
   updatedAt?: string;
 }

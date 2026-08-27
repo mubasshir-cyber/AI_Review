@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Lock, ArrowRight, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { encodePasswordPayload } from '../utils/security';
 
 export const ResetPasswordPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -39,7 +40,7 @@ export const ResetPasswordPage: React.FC = () => {
       const res = await fetch('/api/auth/reset-password-with-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword }),
+        body: JSON.stringify({ token, newPassword: encodePasswordPayload(newPassword) }),
       });
       const data = await res.json();
       

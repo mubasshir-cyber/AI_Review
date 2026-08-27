@@ -30,6 +30,18 @@ export class AuthController {
     return this.authService.resetPasswordWithToken(body);
   }
 
+  @Public()
+  @Throttle({ default: { ttl: 60000, limit: 10 } })
+  @Post('refresh')
+  async refresh(@Body() body: { refreshToken?: string }) {
+    return this.authService.refreshToken(body.refreshToken || '');
+  }
+
+  @Post('logout')
+  async logout(@CurrentUser('id') userId: string, @Body() body: { refreshToken?: string }) {
+    return this.authService.logout(userId, body.refreshToken);
+  }
+
   @Get('me')
   async me(@CurrentUser('id') userId: string) {
     return this.authService.getProfile(userId);
