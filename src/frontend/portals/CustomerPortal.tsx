@@ -157,7 +157,8 @@ export const CustomerPortal: React.FC = () => {
     setStep('GENERATING');
 
     try {
-      const res = await fetch('/api/reviews/generate', {
+      const endpoint = isDirectLink ? '/api/reviews/generate' : '/api/reviews/generate-demo';
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

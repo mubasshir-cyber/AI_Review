@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Branch, Review, Feedback, Advertisement, Business } from '../../types';
+import { encodePasswordPayload } from '../utils/security';
 import { StatCard } from '../components/StatCard';
 import { BannerAd } from '../components/BannerAd';
 import { AdvancedQRStudio } from '../components/AdvancedQRStudio';
@@ -72,6 +73,7 @@ export const BusinessPortal: React.FC = () => {
   const [profileDescription, setProfileDescription] = useState('');
   const [profileWorkingHours, setProfileWorkingHours] = useState('');
   const [profileLogoUrl, setProfileLogoUrl] = useState('');
+  const [profileGoogleReviewUrl, setProfileGoogleReviewUrl] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // Filters
@@ -86,7 +88,7 @@ export const BusinessPortal: React.FC = () => {
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
   const [isVerifyPasswordModalOpen, setIsVerifyPasswordModalOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
-const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
 
   const bizId = currentBusiness?.id;
 
@@ -103,6 +105,7 @@ const [showCurrentPassword, setShowCurrentPassword] = useState(false);
       setProfileDescription((currentBusiness as any).description || '');
       setProfileWorkingHours((currentBusiness as any).workingHours || 'Mon - Sat: 9:00 AM - 8:00 PM');
       setProfileLogoUrl(currentBusiness.logoUrl || '');
+      setProfileGoogleReviewUrl((currentBusiness as any).googleReviewUrl || '');
     }
   }, [currentBusiness]);
 
@@ -162,6 +165,7 @@ const [showCurrentPassword, setShowCurrentPassword] = useState(false);
         description: profileDescription,
         workingHours: profileWorkingHours,
         logoUrl: profileLogoUrl,
+        googleReviewUrl: profileGoogleReviewUrl,
       };
 
       const res = await fetchWithAuth(`/api/businesses/${bizId}`, {
@@ -218,8 +222,8 @@ const [showCurrentPassword, setShowCurrentPassword] = useState(false);
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          newPassword: newPassword.trim(),
-          currentPassword: currentPassword.trim()
+          newPassword: encodePasswordPayload(newPassword),
+          currentPassword: encodePasswordPayload(currentPassword)
         }),
       });
       const json = await res.json();
@@ -927,6 +931,17 @@ const [showCurrentPassword, setShowCurrentPassword] = useState(false);
                         className="w-full px-4 py-3 text-sm clay-input"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-[#1E293B] mb-1.5">Google Business Review Link</label>
+                    <input
+                      type="url"
+                      value={profileGoogleReviewUrl}
+                      onChange={e => setProfileGoogleReviewUrl(e.target.value)}
+                      placeholder="https://search.google.com/local/writereview?placeid=..."
+                      className="w-full px-4 py-3 text-sm clay-input"
+                    />
                   </div>
 
                   <div>

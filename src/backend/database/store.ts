@@ -23,6 +23,19 @@ export const pool = new pg.Pool({
 });
 
 // Row Mapper Helpers
+export function decodePasswordPayload(pwd?: string): string | undefined {
+  if (!pwd) return pwd;
+  const trimmed = pwd.trim();
+  if (trimmed.startsWith('b64:')) {
+    try {
+      return Buffer.from(trimmed.slice(4), 'base64').toString('utf-8');
+    } catch {
+      return trimmed;
+    }
+  }
+  return trimmed;
+}
+
 function safeInt(val: any, fallback = 0): number {
   const parsed = parseInt(val, 10);
   return isNaN(parsed) ? fallback : parsed;
@@ -43,6 +56,7 @@ function mapUser(row: any): User {
     avatarUrl: row.avatar_url || undefined,
     password: row.password || undefined,
     status: row.status || 'ACTIVE',
+    tokenVersion: safeInt(row.token_version, 1),
     createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
     updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
   };
@@ -371,7 +385,68 @@ class DatabaseStore {
   }
 
   // ==========================================
+  // REFRESH TOKEN & SESSION MANAGEMENT
+  // ==========================================
+  async saveRefreshToken(userId: string, token: string, expiresAt: Date, tokenVersion: number = 1): Promise<void> {
+    const id = `rf-${crypto.randomUUID().slice(0, 12)}`;
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    try {
+      await this.query(
+        `INSERT INTO refresh_tokens (id, user_id, token_hash, token_version, expires_at, is_revoked)
+         VALUES ($1, $2, $3, $4, $5, FALSE)`,
+        [id, userId, tokenHash, tokenVersion, expiresAt.toISOString()]
+      );
+    } catch (e) {
+      console.error('Failed to save refresh token:', e);
+    }
+  }
+
+  async isRefreshTokenValid(token: string): Promise<{ valid: boolean; userId?: string; tokenVersion?: number }> {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    try {
+      const res = await this.query(
+        `SELECT * FROM refresh_tokens WHERE token_hash = $1 AND is_revoked = FALSE AND expires_at > CURRENT_TIMESTAMP`,
+        [tokenHash]
+      );
+      if (res.rows.length === 0) return { valid: false };
+      const row = res.rows[0];
+      return { valid: true, userId: row.user_id, tokenVersion: safeInt(row.token_version, 1) };
+    } catch (e) {
+      console.error('Failed to validate refresh token:', e);
+      return { valid: false };
+    }
+  }
+
+  async revokeRefreshToken(token: string): Promise<void> {
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    try {
+      await this.query(
+        `UPDATE refresh_tokens SET is_revoked = TRUE WHERE token_hash = $1`,
+        [tokenHash]
+      );
+    } catch (e) {
+      console.error('Failed to revoke refresh token:', e);
+    }
+  }
+
+  async incrementTokenVersion(userId: string): Promise<void> {
+    try {
+      await this.query(
+        `UPDATE users SET token_version = COALESCE(token_version, 1) + 1 WHERE id = $1`,
+        [userId]
+      );
+      await this.query(
+        `UPDATE refresh_tokens SET is_revoked = TRUE WHERE user_id = $1`,
+        [userId]
+      );
+    } catch (e) {
+      console.error('Failed to increment token version:', e);
+    }
+  }
+
+  // ==========================================
   // PLAN STORE METHODS
+
   async authenticateUser(loginId: string, plainPassword?: string): Promise<{ user?: User; errorReason?: 'NOT_FOUND' | 'INVALID_PASSWORD' | 'INACTIVE' }> {
     const cleanId = loginId.trim().toLowerCase();
     const res = await this.query(
@@ -390,17 +465,18 @@ class DatabaseStore {
 
     if (plainPassword !== undefined) {
       const storedPassword = userRow.password || '';
+      const actualPassword = decodePasswordPayload(plainPassword) || plainPassword;
       let isValid = false;
 
       if (storedPassword.startsWith('$2a$') || storedPassword.startsWith('$2b$')) {
         try {
-          isValid = bcrypt.compareSync(plainPassword.trim(), storedPassword);
+          isValid = bcrypt.compareSync(actualPassword.trim(), storedPassword);
         } catch (err) {
           isValid = false;
         }
       } else if (storedPassword) {
         // Direct string check for legacy hashed fallback
-        isValid = storedPassword === plainPassword.trim();
+        isValid = storedPassword === actualPassword.trim();
       }
 
       if (!isValid) {
@@ -414,7 +490,8 @@ class DatabaseStore {
   async createUser(userData: Omit<User, 'id' | 'createdAt'>): Promise<User> {
     const id = `usr-${Date.now()}`;
     const createdAt = new Date().toISOString();
-    const rawPwd = userData.password || 'password123';
+    const decoded = decodePasswordPayload(userData.password);
+    const rawPwd = decoded || 'password123';
     const hashedPassword = rawPwd.startsWith('$2a$') || rawPwd.startsWith('$2b$') ? rawPwd : bcrypt.hashSync(rawPwd, 10);
     const status = userData.status || 'ACTIVE';
 
@@ -437,7 +514,8 @@ class DatabaseStore {
   }
 
   async updateUserPassword(userIdOrEmail: string, newPassword: string): Promise<boolean> {
-    const hashedPassword = bcrypt.hashSync(newPassword.trim(), 10);
+    const decoded = decodePasswordPayload(newPassword) || newPassword;
+    const hashedPassword = bcrypt.hashSync(decoded.trim(), 10);
     const identifier = userIdOrEmail.trim();
     const isEmail = identifier.includes('@');
     const res = isEmail

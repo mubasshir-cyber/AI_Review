@@ -6,6 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+forge-token.js
 
 # Migration fix files (added during recent migration/seed fixes)
 migrations/009_add_branch_name.sql

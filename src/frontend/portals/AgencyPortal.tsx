@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Business, Branch, Review, Feedback, Plan, Advertisement, ApiKeyConfig, SystemSettings } from '../../types';
+import { encodePasswordPayload } from '../utils/security';
 import { StatCard } from '../components/StatCard';
 import { Modal } from '../components/Modal';
 import { EmptyState } from '../components/EmptyState';
@@ -12,7 +13,7 @@ import {
   ShieldCheck, Building2, CreditCard, Sparkles, Megaphone, Key, Sliders,
   Plus, Edit, Trash2, Search, CheckCircle2, DollarSign, Activity, Settings, RefreshCw,
   ArrowLeft, MapPin, Phone, ExternalLink, QrCode, Star, MessageSquare, Tag, Users, ChevronRight, Play, Loader2, Menu, X,
-  ChevronLeft, Eye, EyeOff
+  ChevronLeft, Eye, EyeOff, Mail
 } from 'lucide-react';
 import { CategorySearchDropdown } from '../components/CategorySearchDropdown';
 import { useLenisSmoothScroll } from '../hooks/useLenisSmoothScroll';
@@ -162,12 +163,25 @@ export const AgencyPortal: React.FC = () => {
 
   // Ad Banner Modal
   const [isAdModalOpen, setIsAdModalOpen] = useState(false);
+  const [editingAd, setEditingAd] = useState<Advertisement | null>(null);
   const [adTitle, setAdTitle] = useState('');
   const [adDesc, setAdDesc] = useState('');
   const [adCtaText, setAdCtaText] = useState('');
   const [adCtaLink, setAdCtaLink] = useState('');
   const [adBgColor, setAdBgColor] = useState('bg-black');
-  const [showWhatsApp, setShowWhatsApp] = useState(true); // New state
+  const [showWhatsApp, setShowWhatsApp] = useState(true);
+
+  // Agency & Client Password Reset States
+  const [adminCurrentPassword, setAdminCurrentPassword] = useState('');
+  const [adminNewPassword, setAdminNewPassword] = useState('');
+  const [adminConfirmPassword, setAdminConfirmPassword] = useState('');
+  const [showAdminCurrentPwd, setShowAdminCurrentPwd] = useState(false);
+  const [showAdminNewPwd, setShowAdminNewPwd] = useState(false);
+  const [showAdminConfirmPwd, setShowAdminConfirmPwd] = useState(false);
+
+  const [targetClientEmail, setTargetClientEmail] = useState('');
+  const [targetClientPassword, setTargetClientPassword] = useState('');
+  const [showTargetClientPwd, setShowTargetClientPwd] = useState(false);
 
   const loadAgencyData = async () => {
     try {
@@ -324,32 +338,31 @@ export const AgencyPortal: React.FC = () => {
 
   const handleSaveBusiness = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBizModalError('');
 
-    if (!bizName.trim()) { setBizModalError('Business Name is required.'); return; }
-    if (!bizCategory.trim()) { setBizModalError('Category is required.'); return; }
-    if (!ownerName.trim()) { setBizModalError('Owner Name is required.'); return; }
-    if (!ownerEmail.trim()) { setBizModalError('Owner Email is required.'); return; }
+    if (!bizName.trim()) { showToast('Business Name is required.', 'error'); return; }
+    if (!bizCategory.trim()) { showToast('Category is required.', 'error'); return; }
+    if (!ownerName.trim()) { showToast('Owner Name is required.', 'error'); return; }
+    if (!ownerEmail.trim()) { showToast('Owner Email is required.', 'error'); return; }
 
     const cleanPhone = ownerPhone.trim().replace(/[\s\-]/g, '');
     if (!cleanPhone) {
-      setBizModalError('Owner Phone Number is required.');
+      showToast('Owner Phone Number is required.', 'error');
       return;
     }
     if (!/^(?:\+91|0)?[6-9]\d{9}$/.test(cleanPhone)) {
-      setBizModalError('Please enter a valid 10-digit Indian phone number (e.g. 9876543210).');
+      showToast('Please enter a valid 10-digit Indian phone number (e.g. 9876543210).', 'error');
       return;
     }
 
     if (!bizGoogleReviewUrl.trim()) {
-      setBizModalError('Google Business Review Link is required.');
+      showToast('Google Business Review Link is required.', 'error');
       return;
     }
 
     if (!editingBiz) {
-      if (!ownerPassword.trim()) { setBizModalError('Password is required.'); return; }
-      if (ownerPassword.length < 6) { setBizModalError('Password must be 6+ chars.'); return; }
-      if (ownerPassword !== confirmPassword) { setBizModalError('Passwords do not match.'); return; }
+      if (!ownerPassword.trim()) { showToast('Password is required.', 'error'); return; }
+      if (ownerPassword.length < 6) { showToast('Password must be 6+ chars.', 'error'); return; }
+      if (ownerPassword !== confirmPassword) { showToast('Passwords do not match.', 'error'); return; }
     }
 
     const payload = {
@@ -357,7 +370,7 @@ export const AgencyPortal: React.FC = () => {
       category: bizCategory.trim(),
       ownerName: ownerName.trim(),
       ownerEmail: ownerEmail.trim(),
-      password: ownerPassword.trim(),
+      password: encodePasswordPayload(ownerPassword),
       phone: ownerPhone.trim(),
       googleReviewUrl: bizGoogleReviewUrl.trim(),
       planId,
@@ -380,15 +393,15 @@ export const AgencyPortal: React.FC = () => {
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        setBizModalError(json.message || json.error || 'Failed to save business.');
+        showToast(json.message || json.error || 'Failed to save business.', 'error');
         return;
       }
 
       setIsBizModalOpen(false);
       loadAgencyData();
-      showToast(editingBiz ? 'Business updated!' : 'New business onboarded successfully!');
+      showToast(editingBiz ? 'Business updated successfully!' : 'New business onboarded successfully!');
     } catch (err) {
-      setBizModalError('Network or server error while saving business account.');
+      showToast('Network or server error while saving business account.', 'error');
     }
   };
 
@@ -483,28 +496,59 @@ export const AgencyPortal: React.FC = () => {
 
   // Add state for showWhatsApp in your component if you haven't already:
 
+  const handleOpenCreateAd = () => {
+    setEditingAd(null);
+    setAdTitle('');
+    setAdDesc('');
+    setShowWhatsApp(true);
+    setIsAdModalOpen(true);
+  };
+
+  const handleOpenEditAd = (ad: Advertisement) => {
+    setEditingAd(ad);
+    setAdTitle(ad.title);
+    setAdDesc(ad.description);
+    setShowWhatsApp(ad.ctaLink !== 'internal://whatsapp-disabled');
+    setIsAdModalOpen(true);
+  };
+
   const handleSaveAd = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Store the state directly inside ctaLink using our markers
-  const ctaLinkMarker = showWhatsApp ? 'internal://whatsapp-enabled' : 'internal://whatsapp-disabled';
+    const ctaLinkMarker = showWhatsApp ? 'internal://whatsapp-enabled' : 'internal://whatsapp-disabled';
+    const payload = {
+      title: adTitle.trim(),
+      description: adDesc.trim(),
+      ctaText: 'Enquire on WhatsApp',
+      ctaLink: ctaLinkMarker,
+      bannerBgColor: 'bg-black',
+      status: 'ACTIVE' as const,
+    };
+
     try {
-      await fetchWithAuth('/api/ads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: adTitle,
-          description: adDesc,
-          ctaText: adCtaText,
-          ctaLink: ctaLinkMarker, // <--- Storing true/false state here          showWhatsApp: showWhatsApp, // <--- Included in payload
-          bannerBgColor: 'bg-black',
-          status: 'ACTIVE',
-        }),
-      });
+      const res = editingAd
+        ? await fetchWithAuth(`/api/ads/${editingAd.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          })
+        : await fetchWithAuth('/api/ads', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        showToast(json.message || 'Failed to save ad banner.', 'error');
+        return;
+      }
+
       setIsAdModalOpen(false);
       loadAgencyData();
-      showToast('Ad banner published!');
+      showToast(editingAd ? 'Ad banner updated successfully!' : 'Ad banner published successfully!');
     } catch (err) {
       console.error(err);
+      showToast('Error saving ad banner.', 'error');
     }
   };
 
@@ -516,6 +560,74 @@ export const AgencyPortal: React.FC = () => {
       showToast('Ad deleted');
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleResetAdminPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!adminCurrentPassword.trim()) {
+      showToast('Current password is required.', 'error');
+      return;
+    }
+    if (!adminNewPassword.trim() || adminNewPassword.trim().length < 6) {
+      showToast('New password must be at least 6 characters.', 'error');
+      return;
+    }
+    if (adminNewPassword.trim() !== adminConfirmPassword.trim()) {
+      showToast('New passwords do not match.', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetchWithAuth('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: encodePasswordPayload(adminCurrentPassword),
+          newPassword: encodePasswordPayload(adminNewPassword),
+        }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        showToast('Admin password updated successfully!', 'success');
+        setAdminCurrentPassword('');
+        setAdminNewPassword('');
+        setAdminConfirmPassword('');
+      } else {
+        showToast(json.message || json.error || 'Failed to update admin password.', 'error');
+      }
+    } catch (err) {
+      showToast('Network error resetting admin password.', 'error');
+    }
+  };
+
+  const [isSendingResetLink, setIsSendingResetLink] = useState(false);
+
+  const handleSendClientResetLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!targetClientEmail.trim()) {
+      showToast('Client owner email is required.', 'error');
+      return;
+    }
+
+    setIsSendingResetLink(true);
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: targetClientEmail.trim() }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) {
+        showToast(`Password reset link sent to ${targetClientEmail.trim()}!`, 'success');
+        setTargetClientEmail('');
+      } else {
+        showToast(json.message || json.error || 'Failed to send password reset link.', 'error');
+      }
+    } catch (err) {
+      showToast('Network error sending password reset link.', 'error');
+    } finally {
+      setIsSendingResetLink(false);
     }
   };
 
@@ -1794,7 +1906,7 @@ export const AgencyPortal: React.FC = () => {
         <p className="text-xs text-[#64748B]">Broadcast upsells and announcements to business owners</p>
       </div>
       <button
-        onClick={() => setIsAdModalOpen(true)}
+        onClick={handleOpenCreateAd}
         className="px-3.5 py-2 clay-btn-primary text-xs cursor-pointer flex items-center space-x-1.5"
       >
         <Plus className="w-4 h-4 text-white" />
@@ -1809,13 +1921,23 @@ export const AgencyPortal: React.FC = () => {
 
         return (
           <div key={ad.id} className="p-5 bg-[#EEF2F7] rounded-2xl border border-[#DCE3EC] relative space-y-3 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
-            <button
-              onClick={() => handleDeleteAd(ad.id)}
-              className="absolute top-3 right-3 p-1.5 text-[#64748B] hover:text-[#EF4444] transition-colors cursor-pointer"
-              title="Delete Ad"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            <div className="absolute top-3 right-3 flex items-center space-x-1">
+              <button
+                onClick={() => handleOpenEditAd(ad)}
+                className="p-1.5 text-[#64748B] hover:text-[#2563EB] transition-colors cursor-pointer"
+                title="Edit Banner Ad"
+              >
+                <Edit className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                onClick={() => handleDeleteAd(ad.id)}
+                className="p-1.5 text-[#64748B] hover:text-[#EF4444] transition-colors cursor-pointer"
+                title="Delete Ad"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
 
             <div className="space-y-1">
               {/* Professional Type Badge */}
@@ -2084,70 +2206,197 @@ export const AgencyPortal: React.FC = () => {
             </div>
           )}
 
-          {/* TAB 6: AGENCY SYSTEM SETTINGS */}
+          {/* TAB 6: AGENCY SYSTEM SETTINGS & PASSWORD MANAGEMENT */}
           {activeTab === 'SETTINGS' && (
-            <form onSubmit={handleSaveSettings} className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-6">
-              <div>
-                <h3 className="text-lg font-extrabold text-[#1E293B]">Agency White-Label & Platform Settings</h3>
-                <p className="text-xs text-[#64748B]">Configure agency branding, support details, and default review gatekeeping rules</p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <form onSubmit={handleSaveSettings} className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-6">
                 <div>
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Agency Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={settings?.agencyName || ''}
-                    onChange={e => setSettings({ ...settings, agencyName: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-xs clay-input"
-                  />
+                  <h3 className="text-lg font-extrabold text-[#1E293B]">Agency White-Label & Platform Settings</h3>
+                  <p className="text-xs text-[#64748B]">Configure agency branding, support details, and default review gatekeeping rules</p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Support Email</label>
-                  <input
-                    type="email"
-                    required
-                    value={settings?.supportEmail || ''}
-                    onChange={e => setSettings({ ...settings, supportEmail: e.target.value })}
-                    className="w-full px-3.5 py-2.5 text-xs clay-input"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-xs font-bold text-[#1E293B] mb-1">Agency Name</label>
+                    <input
+                      type="text"
+                      required
+                      value={settings?.agencyName || ''}
+                      onChange={e => setSettings({ ...settings, agencyName: e.target.value })}
+                      className="w-full px-3.5 py-2.5 text-xs clay-input"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#1E293B] mb-1">Support Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={settings?.supportEmail || ''}
+                      onChange={e => setSettings({ ...settings, supportEmail: e.target.value })}
+                      className="w-full px-3.5 py-2.5 text-xs clay-input"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#1E293B] mb-1">Google Redirect Delay (ms)</label>
+                    <input
+                      type="number"
+                      step="100"
+                      value={settings?.googleRedirectDelayMs || 1500}
+                      onChange={e => setSettings({ ...settings, googleRedirectDelayMs: parseInt(e.target.value) })}
+                      className="w-full px-3.5 py-2.5 text-xs clay-input"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#1E293B] mb-1">Minimum Rating for Public Google Redirect (1 to 5 Stars)</label>
+                    <select
+                      value={settings?.minStarForGoogle || 4}
+                      onChange={e => setSettings({ ...settings, minStarForGoogle: parseInt(e.target.value) })}
+                      className="w-full px-3.5 py-2.5 text-xs clay-input"
+                    >
+                      <option value={5}>5 Stars Only (Strict Gatekeeping)</option>
+                      <option value={4}>4 Stars and Above (Recommended)</option>
+                      <option value={3}>3 Stars and Above</option>
+                      <option value={1}>Direct All Ratings to Google (No Gatekeeping)</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Google Redirect Delay (ms)</label>
-                  <input
-                    type="number"
-                    step="100"
-                    value={settings?.googleRedirectDelayMs || 1500}
-                    onChange={e => setSettings({ ...settings, googleRedirectDelayMs: parseInt(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 text-xs clay-input"
-                  />
-                </div>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 clay-btn-primary text-xs cursor-pointer"
+                >
+                  Save Agency Settings
+                </button>
+              </form>
 
-                <div>
-                  <label className="block text-xs font-bold text-[#1E293B] mb-1">Minimum Rating for Public Google Redirect (1 to 5 Stars)</label>
-                  <select
-                    value={settings?.minStarForGoogle || 4}
-                    onChange={e => setSettings({ ...settings, minStarForGoogle: parseInt(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 text-xs clay-input"
+              {/* Security & Password Reset Cards */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* 1. Admin Password Reset */}
+                <form onSubmit={handleResetAdminPassword} className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-4">
+                  <div>
+                    <h3 className="text-base font-extrabold text-[#1E293B] flex items-center space-x-2">
+                      <Key className="w-4 h-4 text-[#2563EB]" />
+                      <span>Reset Agency Admin Password</span>
+                    </h3>
+                    <p className="text-xs text-[#64748B]">Update your own agency administrator login credentials in database.</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#1E293B] mb-1">Current Password</label>
+                    <div className="relative">
+                      <input
+                        type={showAdminCurrentPwd ? 'text' : 'password'}
+                        required
+                        value={adminCurrentPassword}
+                        onChange={e => setAdminCurrentPassword(e.target.value)}
+                        placeholder="Enter current password"
+                        className="w-full px-3.5 py-2.5 pr-10 text-xs clay-input"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowAdminCurrentPwd(!showAdminCurrentPwd)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                        title={showAdminCurrentPwd ? 'Hide password' : 'Show password'}
+                      >
+                        {showAdminCurrentPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-[#1E293B] mb-1">New Password</label>
+                      <div className="relative">
+                        <input
+                          type={showAdminNewPwd ? 'text' : 'password'}
+                          required
+                          value={adminNewPassword}
+                          onChange={e => setAdminNewPassword(e.target.value)}
+                          placeholder="Min 6 chars"
+                          className="w-full px-3.5 py-2.5 pr-10 text-xs clay-input"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowAdminNewPwd(!showAdminNewPwd)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          title={showAdminNewPwd ? 'Hide password' : 'Show password'}
+                        >
+                          {showAdminNewPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#1E293B] mb-1">Confirm New Password</label>
+                      <div className="relative">
+                        <input
+                          type={showAdminConfirmPwd ? 'text' : 'password'}
+                          required
+                          value={adminConfirmPassword}
+                          onChange={e => setAdminConfirmPassword(e.target.value)}
+                          placeholder="Confirm password"
+                          className="w-full px-3.5 py-2.5 pr-10 text-xs clay-input"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowAdminConfirmPwd(!showAdminConfirmPwd)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          title={showAdminConfirmPwd ? 'Hide password' : 'Show password'}
+                        >
+                          {showAdminConfirmPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 clay-btn-primary text-xs font-bold cursor-pointer"
                   >
-                    <option value={5}>5 Stars Only (Strict Gatekeeping)</option>
-                    <option value={4}>4 Stars and Above (Recommended)</option>
-                    <option value={3}>3 Stars and Above</option>
-                    <option value={1}>Direct All Ratings to Google (No Gatekeeping)</option>
-                  </select>
-                </div>
-              </div>
+                    Update Admin Password
+                  </button>
+                </form>
 
-              <button
-                type="submit"
-                className="px-6 py-2.5 clay-btn-primary text-xs cursor-pointer"
-              >
-                Save Agency Settings
-              </button>
-            </form>
+                {/* 2. Send Password Reset Email Link to Client */}
+                <form onSubmit={handleSendClientResetLink} className="clay-card bg-white p-6 border border-[#DCE3EC] space-y-4">
+                  <div>
+                    <h3 className="text-base font-extrabold text-[#1E293B] flex items-center space-x-2">
+                      <Mail className="w-4 h-4 text-blue-600" />
+                      <span>Send Client Password Reset Email</span>
+                    </h3>
+                    <p className="text-xs text-[#64748B]">Sends a secure 1-hour password reset link to the client business owner via email.</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-[#1E293B] mb-1">Target Client Owner Email</label>
+                    <input
+                      type="email"
+                      required
+                      value={targetClientEmail}
+                      onChange={e => setTargetClientEmail(e.target.value)}
+                      placeholder="e.g. client@business.com"
+                      className="w-full px-3.5 py-2.5 text-xs clay-input"
+                    />
+                  </div>
+
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-[11px] text-blue-800 leading-relaxed">
+                    ℹ️ For security, administrators cannot directly set or view client passwords. Clicking below sends a 1-hour password reset link directly to the client's email address.
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSendingResetLink}
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors shadow-xs flex items-center space-x-2 disabled:opacity-50"
+                  >
+                    <Mail className="w-3.5 h-3.5 text-white" />
+                    <span>{isSendingResetLink ? 'Sending Reset Link...' : 'Send Password Reset Email'}</span>
+                  </button>
+                </form>
+              </div>
+            </div>
           )}
 
           {/* TAB 7: DEMO MANAGEMENT MODULE */}
@@ -2162,9 +2411,9 @@ export const AgencyPortal: React.FC = () => {
         isOpen={isBizModalOpen}
         onClose={() => setIsBizModalOpen(false)}
         title={editingBiz ? 'Edit Client Business Settings' : 'Onboard New Business'}
-        subtitle="3-Step Onboarding & Anti-Hyperbole AI Grounding"
+        subtitle={editingBiz ? 'Edit Anti-Hyperbole AI Grounding & SaaS Subscription Quotas' : '3-Step Onboarding & Anti-Hyperbole AI Grounding'}
       >
-        {/* Step Indicator Visualizer */}
+        {/* Step Indicator Visualizer (3-Step Wizard for Onboarding & Editing) */}
         <div className="mb-6">
           <div className="flex items-center justify-between relative mb-2">
             <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-slate-200 w-full z-0 rounded-full" />
@@ -2175,7 +2424,6 @@ export const AgencyPortal: React.FC = () => {
               }}
             />
 
-            {/* Step 1 Circle */}
             <div
               onClick={() => setOnboardingStep(1)}
               className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full text-xs font-black transition-all cursor-pointer ${
@@ -2187,7 +2435,6 @@ export const AgencyPortal: React.FC = () => {
               1
             </div>
 
-            {/* Step 2 Circle */}
             <div
               onClick={() => {
                 if (bizName && ownerName && ownerEmail) setOnboardingStep(2);
@@ -2201,7 +2448,6 @@ export const AgencyPortal: React.FC = () => {
               2
             </div>
 
-            {/* Step 3 Circle */}
             <div
               onClick={() => {
                 if (bizName && ownerName && ownerEmail) setOnboardingStep(3);
@@ -2224,12 +2470,6 @@ export const AgencyPortal: React.FC = () => {
         </div>
 
         <form onSubmit={handleSaveBusiness} className="space-y-4">
-          {bizModalError && (
-            <div className="p-3 bg-[#EF4444]/10 text-[#EF4444] font-bold text-xs rounded-xl border border-[#EF4444]/20">
-              <span>{bizModalError}</span>
-            </div>
-          )}
-
           {/* STEP 1: Account & Business Profile */}
           {onboardingStep === 1 && (
             <div className="space-y-4 animate-fadeIn">
@@ -2304,62 +2544,57 @@ export const AgencyPortal: React.FC = () => {
                 </div>
               </div>
 
-              <div className="p-4 bg-[#EEF2F7] rounded-2xl border border-[#DCE3EC] space-y-2 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs font-extrabold text-[#1E293B]">
-                    {editingBiz ? 'Reset Owner Password (Optional)' : 'Account Password'}
-                  </label>
-                  {editingBiz && (
-                    <span className="text-[10px] text-[#64748B] italic">Leave blank to keep current</span>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#1E293B] mb-1">
-                      {editingBiz ? 'New Password' : 'Set Password'}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required={!editingBiz}
-                        value={ownerPassword}
-                        onChange={e => setOwnerPassword(e.target.value)}
-                        placeholder={editingBiz ? 'Enter new password...' : 'Min 6 characters'}
-                        className="w-full px-3.5 py-2.5 pr-10 text-xs clay-input"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                        title={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
+              {!editingBiz && (
+                <div className="p-4 bg-[#EEF2F7] rounded-2xl border border-[#DCE3EC] space-y-2 shadow-[inset_1px_1px_2px_rgba(255,255,255,0.9)]">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-extrabold text-[#1E293B]">Account Password</label>
                   </div>
-                  <div>
-                    <label className="block text-[11px] font-bold text-[#1E293B] mb-1">Confirm Password</label>
-                    <div className="relative">
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required={!editingBiz}
-                        value={confirmPassword}
-                        onChange={e => setConfirmPassword(e.target.value)}
-                        placeholder="Re-enter password"
-                        className="w-full px-3.5 py-2.5 pr-10 text-xs clay-input"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
-                        title={showPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-[#1E293B] mb-1">Set Password</label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          value={ownerPassword}
+                          onChange={e => setOwnerPassword(e.target.value)}
+                          placeholder="Min 6 characters"
+                          className="w-full px-3.5 py-2.5 pr-10 text-xs clay-input"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          title={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-[#1E293B] mb-1">Confirm Password</label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          required
+                          value={confirmPassword}
+                          onChange={e => setConfirmPassword(e.target.value)}
+                          placeholder="Re-enter password"
+                          className="w-full px-3.5 py-2.5 pr-10 text-xs clay-input"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                          title={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -2577,7 +2812,7 @@ export const AgencyPortal: React.FC = () => {
               </div>
 
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-                <p className="text-[11px] font-bold text-slate-700">Account Provision Summary:</p>
+                <p className="text-[11px] font-bold text-slate-700">Account Summary:</p>
                 <p className="text-[10px] text-slate-500">Business: <strong>{bizName || 'N/A'}</strong> ({bizCategory || 'General'})</p>
                 <p className="text-[10px] text-slate-500">Owner: <strong>{ownerName || 'N/A'}</strong> ({ownerEmail || 'N/A'})</p>
                 <p className="text-[10px] text-slate-500">Scale Grounding: {teamSize} | {targetAudience} | {locationSetup}</p>
@@ -2612,32 +2847,32 @@ export const AgencyPortal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setBizModalError('');
-                    if (!bizName.trim()) { setBizModalError('Business Name is required.'); return; }
-                    if (!bizCategory.trim()) { setBizModalError('Category is required.'); return; }
-                    if (!ownerName.trim()) { setBizModalError('Owner Name is required.'); return; }
-                    if (!ownerEmail.trim()) { setBizModalError('Owner Email is required.'); return; }
+                    if (!bizName.trim()) { showToast('Business Name is required.', 'error'); return; }
+                    if (!bizCategory.trim()) { showToast('Category is required.', 'error'); return; }
+                    if (!ownerName.trim()) { showToast('Owner Name is required.', 'error'); return; }
+                    if (!ownerEmail.trim()) { showToast('Owner Email is required.', 'error'); return; }
 
                     const cleanPhone = ownerPhone.trim().replace(/[\s\-]/g, '');
                     if (!cleanPhone) {
-                      setBizModalError('Owner Phone Number is required.');
+                      showToast('Owner Phone Number is required.', 'error');
                       return;
                     }
                     if (!/^(?:\+91|0)?[6-9]\d{9}$/.test(cleanPhone)) {
-                      setBizModalError('Please enter a valid 10-digit Indian phone number (e.g. 9876543210 or +91 9876543210).');
+                      showToast('Please enter a valid 10-digit Indian phone number (e.g. 9876543210 or +91 9876543210).', 'error');
                       return;
                     }
 
                     if (!bizGoogleReviewUrl.trim()) {
-                      setBizModalError('Google Business Review Link is required.');
+                      showToast('Google Business Review Link is required.', 'error');
                       return;
                     }
 
                     if (!editingBiz) {
-                      if (!ownerPassword.trim()) { setBizModalError('Password is required.'); return; }
-                      if (ownerPassword.length < 6) { setBizModalError('Password must be 6+ chars.'); return; }
-                      if (ownerPassword !== confirmPassword) { setBizModalError('Passwords do not match.'); return; }
+                      if (!ownerPassword.trim()) { showToast('Password is required.', 'error'); return; }
+                      if (ownerPassword.length < 6) { showToast('Password must be 6+ chars.', 'error'); return; }
+                      if (ownerPassword !== confirmPassword) { showToast('Passwords do not match.', 'error'); return; }
                     }
+
                     setOnboardingStep(2);
                   }}
                   className="w-full sm:w-auto px-5 py-2.5 clay-btn-primary text-xs font-bold flex items-center justify-center cursor-pointer shadow-xs"
@@ -2661,7 +2896,7 @@ export const AgencyPortal: React.FC = () => {
                   type="submit"
                   className="w-full sm:w-auto px-5 py-2.5 clay-btn-primary text-xs font-bold flex items-center justify-center cursor-pointer shadow-xs"
                 >
-                  Save Business &amp; Provision Account
+                  {editingBiz ? 'Save Business Settings' : 'Save Business & Provision Account'}
                 </button>
               )}
             </div>
@@ -2812,74 +3047,74 @@ export const AgencyPortal: React.FC = () => {
         </form>
       </Modal>
 
-      {/* CREATE AD BANNER MODAL */}
-<Modal
-  isOpen={isAdModalOpen}
-  onClose={() => setIsAdModalOpen(false)}
-  title="Create Promotional Banner Ad"
-  subtitle="Displays on Business Owners' dashboards"
->
-  <form onSubmit={handleSaveAd} className="space-y-4">
-    <div>
-      <label className="block text-xs font-bold text-[#1E293B] mb-1">Banner Title</label>
-      <input
-        type="text"
-        required
-        value={adTitle}
-        onChange={e => setAdTitle(e.target.value)}
-        placeholder="e.g. System Maintenance Notice / Upgrade Offer"
-        className="w-full px-3.5 py-2.5 text-xs clay-input"
-      />
-    </div>
-    
-    <div>
-      <label className="block text-xs font-bold text-[#1E293B] mb-1">Message / Description</label>
-      <textarea
-        required
-        value={adDesc}
-        onChange={e => setAdDesc(e.target.value)}
-        placeholder="Brief description of the announcement or offer..."
-        rows={3}
-        className="w-full p-3.5 text-xs clay-input"
-      />
-    </div>
-
-    {/* NEW: Enable/Disable WhatsApp Button Toggle */}
-    <div className="flex items-center justify-between p-3.5 bg-[#F8FAFC] border border-[#DCE3EC] rounded-xl">
-      <div className="space-y-0.5">
-        <label className="text-xs font-bold text-[#1E293B] cursor-pointer" htmlFor="whatsapp-toggle">
-          Enable WhatsApp Enquiry Button
-        </label>
-        <p className="text-[11px] text-[#64748B]">
-          Turn off for informational notices (e.g. server maintenance updates).
-        </p>
-      </div>
-      <input
-        id="whatsapp-toggle"
-        type="checkbox"
-        checked={showWhatsApp}
-        onChange={e => setShowWhatsApp(e.target.checked)}
-        className="w-4 h-4 text-[#2563EB] rounded border-[#DCE3EC] focus:ring-[#2563EB] cursor-pointer"
-      />
-    </div>
-
-    <div className="pt-2 flex justify-end space-x-2">
-      <button
-        type="button"
-        onClick={() => setIsAdModalOpen(false)}
-        className="px-4 py-2.5 clay-btn-secondary text-xs"
+      {/* EDIT / CREATE AD BANNER MODAL */}
+      <Modal
+        isOpen={isAdModalOpen}
+        onClose={() => setIsAdModalOpen(false)}
+        title={editingAd ? 'Edit Banner Ad' : 'Create Promotional Banner Ad'}
+        subtitle="Displays on Business Owners' dashboards"
       >
-        Cancel
-      </button>
-      <button
-        type="submit"
-        className="px-4 py-2.5 clay-btn-primary text-xs cursor-pointer"
-      >
-        Publish Banner Ad
-      </button>
-    </div>
-  </form>
-</Modal>
+        <form onSubmit={handleSaveAd} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-[#1E293B] mb-1">Banner Title</label>
+            <input
+              type="text"
+              required
+              value={adTitle}
+              onChange={e => setAdTitle(e.target.value)}
+              placeholder="e.g. System Maintenance Notice / Upgrade Offer"
+              className="w-full px-3.5 py-2.5 text-xs clay-input"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-xs font-bold text-[#1E293B] mb-1">Message / Description</label>
+            <textarea
+              required
+              value={adDesc}
+              onChange={e => setAdDesc(e.target.value)}
+              placeholder="Brief description of the announcement or offer..."
+              rows={3}
+              className="w-full p-3.5 text-xs clay-input"
+            />
+          </div>
+
+          {/* Enable/Disable WhatsApp Button Toggle */}
+          <div className="flex items-center justify-between p-3.5 bg-[#F8FAFC] border border-[#DCE3EC] rounded-xl">
+            <div className="space-y-0.5">
+              <label className="text-xs font-bold text-[#1E293B] cursor-pointer" htmlFor="whatsapp-toggle">
+                Enable WhatsApp Enquiry Button
+              </label>
+              <p className="text-[11px] text-[#64748B]">
+                Turn off for informational notices (e.g. server maintenance updates).
+              </p>
+            </div>
+            <input
+              id="whatsapp-toggle"
+              type="checkbox"
+              checked={showWhatsApp}
+              onChange={e => setShowWhatsApp(e.target.checked)}
+              className="w-4 h-4 text-[#2563EB] rounded border-[#DCE3EC] focus:ring-[#2563EB] cursor-pointer"
+            />
+          </div>
+
+          <div className="pt-2 flex justify-end space-x-2">
+            <button
+              type="button"
+              onClick={() => setIsAdModalOpen(false)}
+              className="px-4 py-2.5 clay-btn-secondary text-xs"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2.5 clay-btn-primary text-xs cursor-pointer"
+            >
+              {editingAd ? 'Save Banner Changes' : 'Publish Banner Ad'}
+            </button>
+          </div>
+        </form>
+      </Modal>
 
       {/* EDIT / CREATE PLAN MODAL */}
       <Modal

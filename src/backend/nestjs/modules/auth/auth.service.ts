@@ -43,23 +43,105 @@ export class AuthService {
     // Do not return password hash to client
     const { password: _, ...sanitizedUser } = user;
 
+    const tokenVersion = user.tokenVersion || 1;
+
     const payload = {
       userId: user.id,
       email: user.email,
       role: user.role,
       businessId: user.businessId,
+      tokenVersion,
     };
 
-    const expiresIn = (process.env.JWT_EXPIRES_IN || '24h') as any;
-    const accessToken = jwt.sign(payload, JWT_SECRET as string, { expiresIn });
+    const accessTokenExpiresIn ='15m';
+    const refreshTokenExpiresIn = (process.env.REFRESH_TOKEN_EXPIRES_IN || '24h') as any;
+
+    const accessToken = jwt.sign(payload, JWT_SECRET as string, { expiresIn: accessTokenExpiresIn });
+    const refreshToken = jwt.sign(
+      { userId: user.id, tokenVersion, type: 'refresh' },
+      JWT_SECRET as string,
+      { expiresIn: refreshTokenExpiresIn }
+    );
+
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+    await db.saveRefreshToken(user.id, refreshToken, expiresAt, tokenVersion);
 
     return {
       message: 'Authentication successful',
       data: {
         user: sanitizedUser,
         accessToken,
+        refreshToken,
       },
     };
+  }
+
+  async refreshToken(refreshTokenString: string) {
+    if (!refreshTokenString || !refreshTokenString.trim()) {
+      throw new UnauthorizedException('Refresh token is required.');
+    }
+
+    try {
+      const decoded = jwt.verify(refreshTokenString, JWT_SECRET as string) as {
+        userId: string;
+        tokenVersion: number;
+        type?: string;
+      };
+
+      if (decoded.type !== 'refresh') {
+        throw new UnauthorizedException('Invalid token type.');
+      }
+
+      const dbValidation = await db.isRefreshTokenValid(refreshTokenString);
+      if (!dbValidation.valid) {
+        throw new UnauthorizedException('Refresh token is invalid, revoked, or expired.');
+      }
+
+      const user = await db.getUserById(decoded.userId);
+      if (!user || user.status === 'INACTIVE') {
+        throw new UnauthorizedException('User account no longer active.');
+      }
+
+      const currentVersion = user.tokenVersion || 1;
+      if (decoded.tokenVersion !== currentVersion) {
+        throw new UnauthorizedException('Session revoked. Please log in again.');
+      }
+
+      const { password: _, ...sanitizedUser } = user;
+      const payload = {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        businessId: user.businessId,
+        tokenVersion: currentVersion,
+      };
+
+      const accessTokenExpiresIn = (process.env.JWT_EXPIRES_IN || '15m') as any;
+      const newAccessToken = jwt.sign(payload, JWT_SECRET as string, { expiresIn: accessTokenExpiresIn });
+
+      return {
+        message: 'Token refreshed successfully',
+        data: {
+          accessToken: newAccessToken,
+          refreshToken: refreshTokenString,
+          user: sanitizedUser,
+        },
+      };
+    } catch (err: any) {
+      if (err instanceof UnauthorizedException) throw err;
+      throw new UnauthorizedException('Invalid or expired refresh token. Please log in again.');
+    }
+  }
+
+  async logout(userId: string, refreshTokenString?: string) {
+    if (refreshTokenString) {
+      await db.revokeRefreshToken(refreshTokenString);
+    }
+    if (userId) {
+      await db.incrementTokenVersion(userId);
+    }
+    return { message: 'Logged out successfully' };
   }
 
   async getProfile(userId: string) {

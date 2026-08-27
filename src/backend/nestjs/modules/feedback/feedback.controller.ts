@@ -1,4 +1,5 @@
 import { Controller, Get, Post, Put, Param, Query, Body, Inject } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { FeedbackService } from './feedback.service';
 import { Feedback, User } from '../../../../types';
 import { Public } from '../../common/decorators/public.decorator';
@@ -20,6 +21,7 @@ export class FeedbackController {
   }
 
   @Public()
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @Post()
   create(@Body() body: Omit<Feedback, 'id' | 'createdAt' | 'status'>) {
     return this.feedbackService.create(body);

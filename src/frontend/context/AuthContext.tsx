@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, UserRole, Business, Branch } from '../../types';
+import { encodePasswordPayload } from '../utils/security';
 
 interface AuthContextType {
   user: User | null;
@@ -32,8 +33,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
   const [isDbConnected, setIsDbConnected] = useState<boolean | null>(null);
 
+  const doRefresh = useCallback(async (): Promise<string | null> => {
+    const storedRefreshToken = localStorage.getItem('tap_refresh_token');
+    if (!storedRefreshToken) return null;
+    try {
+      const res = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: storedRefreshToken }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success && json.data?.accessToken) {
+        const newAccToken = json.data.accessToken;
+        localStorage.setItem('tap_token', newAccToken);
+        setToken(newAccToken);
+        if (json.data.refreshToken) {
+          localStorage.setItem('tap_refresh_token', json.data.refreshToken);
+        }
+        return newAccToken;
+      }
+    } catch (e) {
+      console.error('Silent refresh failed:', e);
+    }
+    localStorage.removeItem('tap_token');
+    localStorage.removeItem('tap_refresh_token');
+    setToken(null);
+    setUser(null);
+    return null;
+  }, []);
+
   const fetchWithAuth = useCallback(async (url: string, options: RequestInit = {}) => {
-    const activeToken = token || localStorage.getItem('tap_token');
+    let activeToken = token || localStorage.getItem('tap_token');
     const headers = new Headers(options.headers || {});
     if (activeToken) {
       headers.set('Authorization', `Bearer ${activeToken}`);
@@ -41,8 +71,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (options.body && !(options.body instanceof FormData) && !headers.has('Content-Type')) {
       headers.set('Content-Type', 'application/json');
     }
-    return fetch(url, { ...options, headers });
-  }, [token]);
+    
+    let res = await fetch(url, { ...options, headers });
+
+    // Handle token expiration / 401 with automatic silent refresh
+    if (res.status === 401) {
+      const newToken = await doRefresh();
+      if (newToken) {
+        const retryHeaders = new Headers(options.headers || {});
+        retryHeaders.set('Authorization', `Bearer ${newToken}`);
+        if (options.body && !(options.body instanceof FormData) && !retryHeaders.has('Content-Type')) {
+          retryHeaders.set('Content-Type', 'application/json');
+        }
+        res = await fetch(url, { ...options, headers: retryHeaders });
+      }
+    }
+
+    return res;
+  }, [token, doRefresh]);
 
   const checkHealth = async () => {
     try {
@@ -103,20 +149,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Load profile from token on boot
   useEffect(() => {
     const initAuth = async () => {
-      const storedToken = localStorage.getItem('tap_token');
+      let storedToken = localStorage.getItem('tap_token');
+      if (!storedToken) {
+        storedToken = await doRefresh();
+      }
+
       if (storedToken) {
         try {
-          const res = await fetch('/api/auth/me', {
+          let res = await fetch('/api/auth/me', {
             headers: { Authorization: `Bearer ${storedToken}` },
           });
+
+          if (res.status === 401) {
+            const refreshedToken = await doRefresh();
+            if (refreshedToken) {
+              res = await fetch('/api/auth/me', {
+                headers: { Authorization: `Bearer ${refreshedToken}` },
+              });
+            }
+          }
+
           const json = await res.json();
           if (res.ok && json.success && json.data?.user) {
             setUser(json.data.user);
             setRole(json.data.user.role);
             setToken(storedToken);
           } else {
-            // Invalid or expired token
             localStorage.removeItem('tap_token');
+            localStorage.removeItem('tap_refresh_token');
             setToken(null);
             setUser(null);
           }
@@ -127,7 +187,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoadingAuth(false);
     };
     initAuth();
-  }, []);
+  }, [doRefresh]);
 
   useEffect(() => {
     if (user) {
@@ -137,10 +197,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (loginId: string, password?: string): Promise<{ success: boolean; message?: string }> => {
     try {
+      const encodedPassword = encodePasswordPayload(password);
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ loginId: loginId.trim(), email: loginId.trim(), password: password ? password.trim() : undefined }),
+        body: JSON.stringify({ loginId: loginId.trim(), email: loginId.trim(), password: encodedPassword }),
       });
       const json = await res.json();
       
@@ -151,9 +212,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (json.data && json.data.accessToken && json.data.user) {
         const newJwt = json.data.accessToken;
+        const refreshTokenVal = json.data.refreshToken;
         const loggedInUser = json.data.user;
 
         localStorage.setItem('tap_token', newJwt);
+        if (refreshTokenVal) {
+          localStorage.setItem('tap_refresh_token', refreshTokenVal);
+        }
         setToken(newJwt);
         setUser(loggedInUser);
         setRole(loggedInUser.role);
@@ -174,8 +239,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    const activeToken = token || localStorage.getItem('tap_token');
+    const storedRefreshToken = localStorage.getItem('tap_refresh_token');
+
+    try {
+      if (activeToken) {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${activeToken}`,
+          },
+          body: JSON.stringify({ refreshToken: storedRefreshToken || undefined }),
+        });
+      }
+    } catch (e) {
+      console.error('Server logout call error:', e);
+    }
+
     localStorage.removeItem('tap_token');
+    localStorage.removeItem('tap_refresh_token');
     setToken(null);
     setUser(null);
     setCurrentBusiness(null);

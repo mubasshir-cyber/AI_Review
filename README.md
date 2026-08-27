@@ -257,3 +257,4 @@ npm run build
 npm run start
 ```
 The application will bundle the NestJS backend with `esbuild` into `dist/server.cjs` and serve static Vite assets on port `3000`.
+

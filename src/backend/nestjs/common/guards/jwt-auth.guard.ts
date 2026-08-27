@@ -50,6 +50,7 @@ export class JwtAuthGuard implements CanActivate {
         email: string;
         role: string;
         businessId?: string;
+        tokenVersion?: number;
       };
 
       // Verify user in database
@@ -59,6 +60,11 @@ export class JwtAuthGuard implements CanActivate {
       }
       if (user.status === 'INACTIVE') {
         throw new UnauthorizedException('Account is inactive. Access denied.');
+      }
+
+      // Check token version to enforce immediate session revocation upon logout
+      if (decoded.tokenVersion !== undefined && user.tokenVersion !== undefined && decoded.tokenVersion !== user.tokenVersion) {
+        throw new UnauthorizedException('Session has expired or been revoked. Please log in again.');
       }
 
       // Attach sanitized user to request

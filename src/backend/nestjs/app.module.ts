@@ -18,7 +18,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 @Module({
   imports: [
     ThrottlerModule.forRoot([{
-      name: 'global',
+      name: 'default',
       ttl: 60000,
       limit: 100,
     }]),

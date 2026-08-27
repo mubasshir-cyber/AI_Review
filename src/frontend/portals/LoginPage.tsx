@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Sparkles, ArrowRight, Lock, UserCheck, AlertCircle, Loader2, Eye, EyeOff, CheckCircle2, KeyRound } from 'lucide-react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
+import { encodePasswordPayload } from '../utils/security';
 
 export const LoginPage: React.FC = () => {
   const { login, user, isLoadingAuth } = useAuth();
@@ -111,7 +112,7 @@ export const LoginPage: React.FC = () => {
       const res = await fetch('/api/auth/reset-password-with-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: resetToken, newPassword }),
+        body: JSON.stringify({ token: resetToken, newPassword: encodePasswordPayload(newPassword) }),
       });
       const data = await res.json();
 
