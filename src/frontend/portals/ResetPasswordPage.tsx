@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Lock, ArrowRight, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
-import { encodePasswordPayload } from '../utils/security';
+import { encodePasswordPayload, encryptPayloadAsync, decryptPayloadAsync } from '../utils/security';
 
 export const ResetPasswordPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -37,12 +37,14 @@ export const ResetPasswordPage: React.FC = () => {
 
     setIsLoading(true);
     try {
+      const encryptedBody = await encryptPayloadAsync({ token, newPassword });
       const res = await fetch('/api/auth/reset-password-with-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword: encodePasswordPayload(newPassword) }),
+        body: JSON.stringify({ payload: encryptedBody }),
       });
-      const data = await res.json();
+      const rawData = await res.json();
+      const data = rawData.payload ? await decryptPayloadAsync(rawData.payload) : rawData;
       
       if (res.ok) {
         setSuccess(data.message || 'Password reset successfully.');

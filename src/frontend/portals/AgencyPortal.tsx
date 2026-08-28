@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { Business, Branch, Review, Feedback, Plan, Advertisement, ApiKeyConfig, SystemSettings } from '../../types';
-import { encodePasswordPayload } from '../utils/security';
+import { encodePasswordPayload, encryptPayloadAsync, decryptPayloadAsync } from '../utils/security';
 import { StatCard } from '../components/StatCard';
 import { Modal } from '../components/Modal';
 import { EmptyState } from '../components/EmptyState';
@@ -24,8 +24,28 @@ export const AgencyPortal: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'BUSINESSES' | 'PLANS' | 'ADS' | 'AI_ENGINE' | 'SETTINGS' | 'AGENCY_PROFILE' | 'DEMO'>('DASHBOARD');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  useLenisSmoothScroll();
+
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Navigation tab sync from route query or state
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get('tab');
+    if (tabParam) {
+      const validTabs = ['DASHBOARD', 'BUSINESSES', 'PLANS', 'ADS', 'AI_ENGINE', 'SETTINGS', 'AGENCY_PROFILE', 'DEMO'];
+      if (validTabs.includes(tabParam.toUpperCase())) {
+        setActiveTab(tabParam.toUpperCase() as any);
+      }
+    }
+  }, [location.search]);
+
+  const handleTabChange = (tab: 'DASHBOARD' | 'BUSINESSES' | 'PLANS' | 'ADS' | 'AI_ENGINE' | 'SETTINGS' | 'AGENCY_PROFILE' | 'DEMO') => {
+    setActiveTab(tab);
+    setMobileMenuOpen(false);
+    navigate(`/agency?tab=${tab.toLowerCase()}`, { replace: true });
+  };
 
   const tabToPath: Record<string, string> = {
     DASHBOARD: 'dashboard',
@@ -612,12 +632,14 @@ export const AgencyPortal: React.FC = () => {
 
     setIsSendingResetLink(true);
     try {
+      const encryptedBody = await encryptPayloadAsync({ email: targetClientEmail.trim() });
       const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: targetClientEmail.trim() }),
+        body: JSON.stringify({ payload: encryptedBody }),
       });
-      const json = await res.json();
+      const rawJson = await res.json();
+      const json = rawJson.payload ? await decryptPayloadAsync(rawJson.payload) : rawJson;
       if (res.ok && json.success) {
         showToast(`Password reset link sent to ${targetClientEmail.trim()}!`, 'success');
         setTargetClientEmail('');
