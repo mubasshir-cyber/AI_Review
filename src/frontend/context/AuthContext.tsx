@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, UserRole, Business, Branch } from '../../types';
-import { encodePasswordPayload } from '../utils/security';
+import { encodePasswordPayload, encryptPayloadAsync, decryptPayloadAsync } from '../utils/security';
 
 interface AuthContextType {
   user: User | null;
@@ -37,13 +37,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedRefreshToken = localStorage.getItem('tap_refresh_token');
     if (!storedRefreshToken) return null;
     try {
+      const encryptedBody = await encryptPayloadAsync({ refreshToken: storedRefreshToken });
       const res = await fetch('/api/auth/refresh', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: storedRefreshToken }),
+        body: JSON.stringify({ payload: encryptedBody }),
       });
-      const json = await res.json();
-      if (res.ok && json.success && json.data?.accessToken) {
+      const rawJson = await res.json();
+      const payloadStr = rawJson?.payload || rawJson?.data?.payload;
+      const json = payloadStr ? await decryptPayloadAsync(payloadStr) : rawJson;
+      
+      if (res.ok && (json.success || json.data?.accessToken) && json.data?.accessToken) {
         const newAccToken = json.data.accessToken;
         localStorage.setItem('tap_token', newAccToken);
         setToken(newAccToken);
@@ -109,36 +113,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchBusinessData = useCallback(async () => {
     await checkHealth();
     try {
-      const currentUserRole = user?.role || role;
-      if (currentUserRole === 'BUSINESS_OWNER') {
-        const userId = user?.id;
-        const url = userId ? `/api/businesses?ownerId=${userId}` : '/api/businesses';
-        const res = await fetchWithAuth(url);
-        const json = await res.json();
-        if (json.isDbConnected === false) {
-          setIsDbConnected(false);
+      if (!user) return;
+      if (role === 'AGENCY_ADMIN') {
+        const [bizRes, branchRes] = await Promise.all([
+          fetchWithAuth('/api/businesses/biz-agency'),
+          fetchWithAuth('/api/branches?businessId=biz-agency'),
+        ]);
+        const bizJson = await bizRes.json();
+        const branchJson = await branchRes.json();
+
+        if (bizJson.success && bizJson.data) {
+          setCurrentBusiness(bizJson.data);
         }
-        if (json.success && json.data && json.data.length > 0) {
-          setCurrentBusiness(json.data[0]);
-          const bRes = await fetchWithAuth(`/api/branches?businessId=${json.data[0].id}`);
-          const bJson = await bRes.json();
-          if (bJson.success && bJson.data && bJson.data.length > 0) {
-            setCurrentBranch(bJson.data[0]);
-          }
+        if (branchJson.success && Array.isArray(branchJson.data) && branchJson.data.length > 0) {
+          setCurrentBranch(branchJson.data[0]);
         }
-      } else if (currentUserRole === 'AGENCY_ADMIN') {
-        const bRes = await fetchWithAuth('/api/branches');
-        const bJson = await bRes.json();
-        if (bJson.isDbConnected === false) {
-          setIsDbConnected(false);
+      } else if (user.businessId) {
+        const [bizRes, branchRes] = await Promise.all([
+          fetchWithAuth(`/api/businesses/${user.businessId}`),
+          fetchWithAuth(`/api/branches?businessId=${user.businessId}`),
+        ]);
+        const bizJson = await bizRes.json();
+        const branchJson = await branchRes.json();
+
+        if (bizJson.success && bizJson.data) {
+          setCurrentBusiness(bizJson.data);
         }
-        if (bJson.success && bJson.data && bJson.data.length > 0) {
-          setCurrentBranch(bJson.data[0]);
-          const bizRes = await fetchWithAuth(`/api/businesses/${bJson.data[0].businessId}`);
-          const bizJson = await bizRes.json();
-          if (bizJson.success) {
-            setCurrentBusiness(bizJson.data);
-          }
+        if (branchJson.success && Array.isArray(branchJson.data) && branchJson.data.length > 0) {
+          setCurrentBranch(branchJson.data[0]);
         }
       }
     } catch (err) {
@@ -169,8 +171,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
 
-          const json = await res.json();
-          if (res.ok && json.success && json.data?.user) {
+          const rawJson = await res.json();
+          const payloadStr = rawJson?.payload || rawJson?.data?.payload;
+          const json = payloadStr ? await decryptPayloadAsync(payloadStr) : rawJson;
+
+          if (res.ok && (json.success || json.data?.user) && json.data?.user) {
             setUser(json.data.user);
             setRole(json.data.user.role);
             setToken(storedToken);
@@ -197,23 +202,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (loginId: string, password?: string): Promise<{ success: boolean; message?: string }> => {
     try {
-      const encodedPassword = encodePasswordPayload(password);
+      const encryptedBody = await encryptPayloadAsync({
+        loginId: loginId.trim(),
+        email: loginId.trim(),
+        password,
+      });
+
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ loginId: loginId.trim(), email: loginId.trim(), password: encodedPassword }),
+        body: JSON.stringify({ payload: encryptedBody }),
       });
-      const json = await res.json();
+      const rawJson = await res.json();
+      const payloadStr = rawJson?.payload || rawJson?.data?.payload;
+      const json = payloadStr ? await decryptPayloadAsync(payloadStr) : rawJson;
       
-      if (!res.ok || !json.success) {
+      if (!res.ok || (json.success === false)) {
         const errorMsg = json.message || json.error || 'Authentication failed. Please verify credentials.';
         return { success: false, message: errorMsg };
       }
 
-      if (json.data && json.data.accessToken && json.data.user) {
-        const newJwt = json.data.accessToken;
-        const refreshTokenVal = json.data.refreshToken;
-        const loggedInUser = json.data.user;
+      const responseData = json.data || json;
+
+      if (responseData && responseData.accessToken && responseData.user) {
+        const newJwt = responseData.accessToken;
+        const refreshTokenVal = responseData.refreshToken;
+        const loggedInUser = responseData.user;
 
         localStorage.setItem('tap_token', newJwt);
         if (refreshTokenVal) {
@@ -245,13 +259,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       if (activeToken) {
+        const encryptedBody = await encryptPayloadAsync({ refreshToken: storedRefreshToken || undefined });
         await fetch('/api/auth/logout', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${activeToken}`,
           },
-          body: JSON.stringify({ refreshToken: storedRefreshToken || undefined }),
+          body: JSON.stringify({ payload: encryptedBody }),
         });
       }
     } catch (e) {

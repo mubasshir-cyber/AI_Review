@@ -14,8 +14,8 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, StandardRespon
   intercept(context: ExecutionContext, next: CallHandler): Observable<StandardResponse<T>> {
     return next.handle().pipe(
       map((resData) => {
-        // If data is already wrapped in envelope, pass through
-        if (resData && typeof resData === 'object' && 'success' in resData && 'data' in resData) {
+        // If data is already wrapped in envelope (data or payload), pass through
+        if (resData && typeof resData === 'object' && 'success' in resData && ('data' in resData || 'payload' in resData)) {
           return resData;
         }
 

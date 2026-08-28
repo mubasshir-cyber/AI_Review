@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Sparkles, ArrowRight, Lock, UserCheck, AlertCircle, Loader2, Eye, EyeOff, CheckCircle2, KeyRound } from 'lucide-react';
 import { Link, Navigate, useSearchParams } from 'react-router-dom';
-import { encodePasswordPayload } from '../utils/security';
+import { encodePasswordPayload, encryptPayloadAsync, decryptPayloadAsync } from '../utils/security';
 
 export const LoginPage: React.FC = () => {
   const { login, user, isLoadingAuth } = useAuth();
@@ -44,11 +44,12 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
     if (!loginId || !loginId.trim()) {
-      setError('Please enter your Login ID.');
+      setError('Please enter your email or Login ID.');
       return;
     }
-    if (!password || !password.trim()) {
+    if (!password) {
       setError('Please enter your password.');
       return;
     }
@@ -58,7 +59,7 @@ export const LoginPage: React.FC = () => {
     setIsLoading(false);
 
     if (!result.success) {
-      setError(result.message || 'Invalid Login ID or password. Please verify your credentials.');
+      setError(result.message || 'Authentication failed. Please verify your credentials.');
     }
   };
 
@@ -74,12 +75,14 @@ export const LoginPage: React.FC = () => {
 
     setIsSendingReset(true);
     try {
+      const encryptedBody = await encryptPayloadAsync({ email: forgotPasswordEmail.trim() });
       const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: forgotPasswordEmail.trim() }),
+        body: JSON.stringify({ payload: encryptedBody }),
       });
-      const data = await res.json();
+      const rawData = await res.json();
+      const data = rawData.payload ? await decryptPayloadAsync(rawData.payload) : rawData;
 
       if (res.ok) {
         setForgotPasswordSuccess(data.message || 'If an account exists, a reset link has been sent.');
@@ -109,12 +112,14 @@ export const LoginPage: React.FC = () => {
 
     setIsResetting(true);
     try {
+      const encryptedBody = await encryptPayloadAsync({ token: resetToken, newPassword });
       const res = await fetch('/api/auth/reset-password-with-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: resetToken, newPassword: encodePasswordPayload(newPassword) }),
+        body: JSON.stringify({ payload: encryptedBody }),
       });
-      const data = await res.json();
+      const rawData = await res.json();
+      const data = rawData.payload ? await decryptPayloadAsync(rawData.payload) : rawData;
 
       if (res.ok) {
         setResetSuccess(data.message || 'Password reset successfully! You can now log in.');
